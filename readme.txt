@@ -153,3 +153,12 @@ Options: -h       display this help message
          -f FLOAT comparison: fold change cutoff [2]
          -p FLOAT comparison: p-value cutoff [0.05]
          -a FLOAT comparison: FDR-adjusted p-value cutoff [1]
+
+
+CITATION
+========
+
+Kim J, Kim MS, Koh AY, Xie Y, Zhan X.
+"FMAP: Functional Mapping and Analysis Pipeline for metagenomics and metatranscriptomics studies"
+BMC Bioinformatics. 2016 Oct 10;17(1):420.
+PMID: 27724866
