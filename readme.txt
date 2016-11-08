@@ -1,5 +1,5 @@
-FMAP: Functional Mapping Analysis Pipeline
-https://qbrc.swmed.edu/FMAP/
+FMAP: Functional Mapping Analysis Pipeline (https://qbrc.swmed.edu/FMAP/)
+
 
 REQUIREMENTS
 ============
