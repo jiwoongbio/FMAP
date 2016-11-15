@@ -27,9 +27,10 @@ EOF
 die "ERROR: The test is not provided.\n" if(scalar(grep {$test eq $_} @availableTestList) == 0);
 
 my ($tableFile, @samplesList) = @ARGV;
-die "ERROR: The input \"$tableFile\" is not available.\n" unless(-r $tableFile);
-die "ERROR: Not enough sample groups.\n" unless(scalar(@samplesList) > 1);
 my @sampleListList = map {[split(/,/, $_)]} @samplesList;
+die "ERROR: The input \"$tableFile\" is not available.\n" unless(-r $tableFile);
+die "ERROR: Not enough sample groups.\n" unless(scalar(@sampleListList) > 1);
+die "ERROR: The comparison requires at least 3 samples per group.\n" unless(scalar(grep {scalar(@$_) < 3} @sampleListList) == 0);
 
 my $R = Statistics::R->new();
 $R->run("table <- data.frame()");
