@@ -1,4 +1,4 @@
-# Author: Jiwoong Kim (jiwoongbio@gmail.com)
+#!/usr/bin/env perl
 use strict;
 use warnings;
 use Cwd 'abs_path';
@@ -6,8 +6,8 @@ use Getopt::Long;
 use List::Util qw(min);
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
-my $database = loadDefaultDatabase();
-my $databasePath = "$fmapPath/FMAP_data/$database";
+#my $database = loadDefaultDatabase();
+#my $databasePath = "$fmapPath/FMAP_data/$database";
 
 GetOptions('h' => \(my $help = ''),
 	'c' => \(my $cpmInsteadOfRPKM = ''),
@@ -15,7 +15,7 @@ GetOptions('h' => \(my $help = ''),
 	'o=s' => \(my $orthologyDefinitionFile = ''),
 	'p=s' => \(my $proteinOrthologyFile = ''),
 	'w=s' => \(my $readNameWeightFile = ''),
-	'd=s' => \$databasePath);
+	'd=s' => \(my $databasePath = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -24,10 +24,20 @@ Usage:   perl FMAP_quantification.pl [options] blast_hits1.txt [blast_hits2.txt 
 Options: -h       display this help message
          -c       use CPM values instead of RPKM values
          -w FILE  tab-delimited text file with the first column having read names and the second column having the weights
+         -d       full path for database location [$fmapPath/FMAP_data]
 
 EOF
 }
-$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($databasePath eq "$fmapPath/FMAP_data/$database" && $orthologyDefinitionFile eq '');
+
+unless ($databasePath ne '') {
+	$databasePath = $fmapPath . "/FMAP_data";
+};
+
+die "Database path does not exist: " . $databasePath . "\n" unless (-d $databasePath);
+
+my $database = loadDefaultDatabase($databasePath);
+$orthologyDefinitionFile = $databasePath . "/KEGG_orthology.txt" if ($orthologyDefinitionFile eq '' && $database eq "orthology_uniref90_Bacteria_Archaea_Fungi");
+die "Could not find orthology definition file: " . $orthologyDefinitionFile . "\n" unless (-r $orthologyDefinitionFile);
 
 my (@inputFileList) = @ARGV;
 my %orthologyDefinitionHash = ();
@@ -63,7 +73,7 @@ if($readNameWeightFile ne '') {
 my %orthologyHash = ();
 my %proteinLengthHash = ();
 {
-	open(my $reader, "$databasePath.length.txt");
+	open(my $reader, $databasePath . "/" . $database . ".length.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($protein, $length) = split(/\t/, $line);
@@ -131,7 +141,13 @@ if($orthologyDefinitionFile ne '') {
 }
 
 sub loadDefaultDatabase {
-	open(my $reader, "$fmapPath/FMAP_data/database");
+	die "Could not find database path: " . $_[0] . "\n" unless ($_[0]);
+
+	$_[0] =~ s/\/$//;
+	my $dbFile = $_[0] . "/database";
+	die "Could not find database file: " . $dbFile . "\n" unless (-r $dbFile);
+
+	open(my $reader, $dbFile);
 	chomp(my $line = <$reader>);
 	close($reader);
 	return $1 if($line =~ /^([A-Za-z0-9_.]+)/);

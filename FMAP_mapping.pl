@@ -1,12 +1,11 @@
-# Author: Jiwoong Kim (jiwoongbio@gmail.com)
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 use Cwd 'abs_path';
 use Getopt::Long;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
-my $database = loadDefaultDatabase();
-my $databasePath = "$fmapPath/FMAP_data/$database";
 
 my @alignmentFileList = ();
 GetOptions('h' => \(my $help = ''),
@@ -17,7 +16,7 @@ GetOptions('h' => \(my $help = ''),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
 	'a=s' => \@alignmentFileList,
 	'multiple' => \(my $multiple = ''),
-	'd=s' => \$databasePath);
+	'd=s' => \(my $databasePath = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -29,9 +28,21 @@ Options: -h       display this help message
          -e FLOAT maximum e-value to report alignments for "diamond" [0.001]
          -i FLOAT minimum identity for "usearch_global" [0.8]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
+         -d       full path for database location [$fmapPath/FMAP_data]
 
 EOF
 }
+
+unless ($databasePath ne '') {
+	$databasePath = $fmapPath . "/FMAP_data";
+};
+die "Database path does not exist: " . $databasePath . "\n" unless (-d $databasePath);
+
+my $database = loadDefaultDatabase($databasePath);
+$databasePath =~ s/\/$//;
+$databasePath .= "/" . $database;
+die "ERROR: The database is not available.\n" unless (-r $databasePath . ".dmnd" || -r $databasePath . ".udb");
+
 (my $mapper = $mapperPath) =~ s/^.*\///;
 die "ERROR: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
 die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
@@ -78,7 +89,13 @@ if($mapper eq 'usearch') {
 }
 
 sub loadDefaultDatabase {
-	open(my $reader, "$fmapPath/FMAP_data/database");
+	die "Could not find database path: " . $_[0] . "\n" unless ($_[0]);
+
+	$_[0] =~ s/\/$//;
+	my $dbFile = $_[0] . "/database";
+	die "Could not find database file: " . $dbFile . "\n" unless (-r $dbFile);
+
+	open(my $reader, $dbFile);
 	chomp(my $line = <$reader>);
 	close($reader);
 	return $1 if($line =~ /^([A-Za-z0-9_.]+)/);
