@@ -8,7 +8,9 @@ use Statistics::R;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 
-GetOptions('h' => \(my $help = ''), 'a' => \(my $all = ''));
+GetOptions(	'h' => \(my $help = ''), 
+			'a' => \(my $all = ''),
+			'd=s' => \(my $databasePath = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -16,9 +18,15 @@ Usage:   perl FMAP_operon.pl [options] orthology_test_stat.txt > operon.txt
 
 Options: -h       display this help message
          -a       print single-gene operons as well
+         -d       full path for database location [$fmapPath/FMAP_data]
 
 EOF
 }
+
+unless ($databasePath ne '') {
+	$databasePath = $fmapPath . "/FMAP_data";
+};
+die "Database path does not exist: " . $databasePath . "\n" unless (-d $databasePath);
 
 my ($inputFile) = @ARGV;
 die "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
@@ -42,7 +50,10 @@ my $passCount = scalar(grep {$_ eq 'pass'} values %orthologyFilterHash);
 my $failCount = scalar(grep {$_ eq 'fail'} values %orthologyFilterHash);
 my @operonsOrthologiesFoldchangeList = ();
 my $R = Statistics::R->new();
-open(my $reader, "$fmapPath/FMAP_data/known_operon.KEGG_orthology.txt");
+
+$databasePath =~ s/\/$//;
+die "Could not find " . $databasePath . "/known_operon.KEGG_orthology.txt\n" unless (-r $databasePath . "/known_operon.KEGG_orthology.txt");
+open(my $reader, $databasePath . "/known_operon.KEGG_orthology.txt");
 while(my $line = <$reader>) {
 	chomp($line);
 	my ($operons, $orthologies) = split(/\t/, $line);
@@ -73,7 +84,8 @@ $R->stop();
 
 my %operonsDefinitionHash = ();
 {
-	open(my $reader, "$fmapPath/FMAP_data/known_operon.definition.txt");
+	die "Could not find " . $databasePath . "/known_operon.definition.txt\n" unless (-r $databasePath . "/known_operon.definition.txt");
+	open(my $reader, $databasePath . "/known_operon.definition.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($operons, $definition) = split(/\t/, $line);
@@ -84,7 +96,8 @@ my %operonsDefinitionHash = ();
 
 my %operonsOrthologyDefinitionHash = ();
 {
-	open(my $reader, "$fmapPath/FMAP_data/known_operon.KEGG_orthology_definition.txt");
+	die "Could not find " . $databasePath . "/known_operon.KEGG_orthology_definition.txt\n" unless (-r $databasePath . "/known_operon.KEGG_orthology_definition.txt");
+	open(my $reader, $databasePath . "/known_operon.KEGG_orthology_definition.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($operons, $orthologyDefinition) = split(/\t/, $line);
@@ -95,7 +108,8 @@ my %operonsOrthologyDefinitionHash = ();
 
 my %operonsPathwaysHash = ();
 {
-	open(my $reader, "$fmapPath/FMAP_data/known_operon.KEGG_pathway.txt");
+	die "Could not find " . $databasePath . "/known_operon.KEGG_pathway.txt\n" unless (-r $databasePath . "/known_operon.KEGG_pathway.txt");
+	open(my $reader, $databasePath . "/known_operon.KEGG_pathway.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($operons, $pathways) = split(/\t/, $line);
