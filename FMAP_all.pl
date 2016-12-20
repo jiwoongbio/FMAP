@@ -114,11 +114,11 @@ foreach(grep {$_ ne 'control'} @groupList) {
 	my @sampleList = @{$groupSampleListHash{$_}};
 	push(@samplesList, join(',', @sampleList));
 }
-print $writer "perl $fmapPath/FMAP_comparison.pl -t $test -f $foldchangeCutoff -p $pvalueCutoff -a $padjustCutoff $outputPrefix.table.txt @samplesList > $outputPrefix.comparison.txt\n";
+print $writer "perl $fmapPath/FMAP_comparison.pl -c $test -f $foldchangeCutoff -p $pvalueCutoff -a $padjustCutoff $outputPrefix.table.txt @samplesList > $outputPrefix.comparison.txt\n";
 print $writer "\n";
 
-print $writer "perl $fmapPath/FMAP_operon.pl $outputPrefix.comparison.txt > $outputPrefix.operon.txt\n";
-print $writer "perl $fmapPath/FMAP_pathway.pl $outputPrefix.comparison.txt > $outputPrefix.pathway.txt\n";
+print $writer "perl $fmapPath/FMAP_operon.pl -d $databasePath $outputPrefix.comparison.txt > $outputPrefix.operon.txt\n";
+print $writer "perl $fmapPath/FMAP_pathway.pl -d $databasePath $outputPrefix.comparison.txt > $outputPrefix.pathway.txt\n";
 close($writer);
 
 print "The script file \"$outputPrefix.sh\" was generated.\n";
