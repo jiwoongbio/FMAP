@@ -1,4 +1,4 @@
-# Author: Jiwoong Kim (jiwoongbio@gmail.com)
+#!/usr/bin/env perl
 use strict;
 use warnings;
 use Cwd 'abs_path';
@@ -7,16 +7,23 @@ use Statistics::R;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 
-GetOptions('h' => \(my $help = ''));
+GetOptions( 'h' => \(my $help = ''),
+			'd=s' => \(my $databasePath = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
 Usage:   perl FMAP_pathway.pl [options] orthology_test_stat.txt > pathway.txt
 
-Options: -h       display this help message
+Options: 	-h       display this help message
+			-d       full path for database location [$fmapPath/FMAP_data]
 
 EOF
 }
+
+unless ($databasePath ne '') {
+	$databasePath = $fmapPath . "/FMAP_data";
+};
+die "Database path does not exist: " . $databasePath . "\n" unless (-d $databasePath);
 
 my ($inputFile) = @ARGV;
 die "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
@@ -42,7 +49,10 @@ my $totalTargetOrthologyCount = scalar(keys %targetOrthologyColorHash);
 my %pathwayTargetOrthologyListHash = ();
 my %pathwayTotalOrthologyCountHash = ();
 my %orthologyHash = ();
-open(my $reader, "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt");
+
+$databasePath =~ s/\/$//;
+die "Could not find " . $databasePath . "/KEGG_orthology2pathway.txt\n" unless (-r $databasePath . "/KEGG_orthology2pathway.txt");
+open(my $reader, $databasePath . "/KEGG_orthology2pathway.txt");
 while(my $line = <$reader>) {
 	chomp($line);
 	my ($orthology, $pathway) = split(/\t/, $line);
@@ -56,7 +66,8 @@ my $totalOrthologyCount = scalar(keys %orthologyHash);
 
 my %pathwayDefinitionHash = ();
 {
-	open(my $reader, "$fmapPath/FMAP_data/KEGG_pathway.txt");
+	die "Could not find " . $databasePath . "/KEGG_pathway.txt\n" unless (-r $databasePath . "/KEGG_pathway.txt");
+	open(my $reader, $databasePath . "/KEGG_pathway.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($pathway, $definition) = split(/\t/, $line);
