@@ -67,7 +67,7 @@ if($mapper eq 'usearch') {
 	die "ERROR: The database is not available.\n" unless(-r "$databasePath.udb");
 	foreach my $inputFile (@inputFileList) {
 		print STDERR "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
-		system("$mapperPath -usearch_global $inputFile -db $databasePath.udb -id $identity -blast6out $temporaryOutputPrefix.b6 -top_hits_only -threads $mappingThreads");
+		system("$mapperPath -usearch_global $inputFile -db $databasePath.udb -id $identity -blast6out $temporaryOutputPrefix.b6 -top_hits_only -threads $mappingThreads 1>&2");
 		if(-r "$temporaryOutputPrefix.b6") {
 			open(my $reader, "$temporaryOutputPrefix.b6");
 			print while(<$reader>);
