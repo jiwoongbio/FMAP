@@ -10,7 +10,6 @@ if($help || scalar(@ARGV) == 0) {
 Usage:   perl FMAP_table.pl [options] [name1=]abundance1.txt [[name2=]abundance2.txt [...]] > abundance_table.txt
 
 Options: -h       display this help message
-         -c       use raw counts instead of RPKM values
 
 EOF
 }

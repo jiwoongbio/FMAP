@@ -14,7 +14,6 @@ GetOptions('h' => \(my $help = ''),
 	'i=f' => \(my $minimumPercentIdentity = 80),
 	'o=s' => \(my $orthologyDefinitionFile = ''),
 	'p=s' => \(my $proteinOrthologyFile = ''),
-	'w=s' => \(my $readNameWeightFile = ''),
 	'd=s' => \$databasePath);
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
@@ -23,7 +22,6 @@ Usage:   perl FMAP_quantification.pl [options] blast_hits1.txt [blast_hits2.txt 
 
 Options: -h       display this help message
          -c       use CPM values instead of RPKM values
-         -w FILE  tab-delimited text file with the first column having read names and the second column having the weights
 
 EOF
 }
@@ -50,16 +48,6 @@ if($proteinOrthologyFile ne '') {
 	}
 	close($reader);
 }
-my %readNameWeightHash = ();
-if($readNameWeightFile ne '') {
-	open(my $reader, $readNameWeightFile);
-	while(my $line = <$reader>) {
-		chomp($line);
-		my ($readName, $weight) = split(/\t/, $line);
-		$readNameWeightHash{$readName} = $weight;
-	}
-	close($reader);
-}
 my %orthologyHash = ();
 my %proteinLengthHash = ();
 {
@@ -73,7 +61,7 @@ my %proteinLengthHash = ();
 	close($reader);
 }
 
-my ($totalReadCount, %orthologyCountHash, %orthologyRpkHash) = (0);
+my ($readNumber, %orthologyCountHash, %orthologyRpkHash) = (0);
 my ($previousReadName, %orthologyProteinLengthHash) = ('');
 open(my $reader, "cat @inputFileList | sort --field-separator='\t' -k1,1 |");
 while(my $line = <$reader>) {
@@ -81,12 +69,12 @@ while(my $line = <$reader>) {
 	my ($readName, $protein, $percentIdentity) = split(/\t/, $line);
 	next if($percentIdentity < $minimumPercentIdentity);
 	if($readName ne $previousReadName) {
-		if($previousReadName ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$previousReadName} : 1)) {
+		if($previousReadName ne '') {
 			if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) == 1) {
-				$orthologyCountHash{$_} += $weight foreach(@orthologyList);
-				$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
+				$orthologyCountHash{$_} += 1 foreach(@orthologyList);
+				$orthologyRpkHash{$_} += 1 / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
 			}
-			$totalReadCount += $weight;
+			$readNumber += 1;
 		}
 		($previousReadName, %orthologyProteinLengthHash) = ($readName);
 	}
@@ -95,12 +83,12 @@ while(my $line = <$reader>) {
 	}
 }
 close($reader);
-if($previousReadName ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$previousReadName} : 1)) {
+if($previousReadName ne '') {
 	if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) == 1) {
-		$orthologyCountHash{$_} += $weight foreach(@orthologyList);
-		$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
+		$orthologyCountHash{$_} += 1 foreach(@orthologyList);
+		$orthologyRpkHash{$_} += 1 / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
 	}
-	$totalReadCount += $weight;
+	$readNumber += 1;
 }
 
 if($orthologyDefinitionFile ne '') {
@@ -109,10 +97,10 @@ if($orthologyDefinitionFile ne '') {
 		my $definition = defined($_ = $orthologyDefinitionHash{$orthology}) ? $_ : '';
 		my $count = defined($_ = $orthologyCountHash{$orthology}) ? $_ : 0;
 		if($cpmInsteadOfRPKM) {
-			my $cpm = $count / ($totalReadCount / 1000000);
+			my $cpm = $count / ($readNumber / 1000000);
 			print join("\t", $orthology, $definition, $count, $cpm), "\n";
 		} else {
-			my $rpkm = (defined($_ = $orthologyRpkHash{$orthology}) ? $_ : 0) / ($totalReadCount / 1000000);
+			my $rpkm = (defined($_ = $orthologyRpkHash{$orthology}) ? $_ : 0) / ($readNumber / 1000000);
 			print join("\t", $orthology, $definition, $count, $rpkm), "\n";
 		}
 	}
@@ -121,10 +109,10 @@ if($orthologyDefinitionFile ne '') {
 	foreach my $orthology (sort keys %orthologyHash) {
 		my $count = defined($_ = $orthologyCountHash{$orthology}) ? $_ : 0;
 		if($cpmInsteadOfRPKM) {
-			my $cpm = $count / ($totalReadCount / 1000000);
+			my $cpm = $count / ($readNumber / 1000000);
 			print join("\t", $orthology, $count, $cpm), "\n";
 		} else {
-			my $rpkm = (defined($_ = $orthologyRpkHash{$orthology}) ? $_ : 0) / ($totalReadCount / 1000000);
+			my $rpkm = (defined($_ = $orthologyRpkHash{$orthology}) ? $_ : 0) / ($readNumber / 1000000);
 			print join("\t", $orthology, $count, $rpkm), "\n";
 		}
 	}
