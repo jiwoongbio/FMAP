@@ -104,7 +104,7 @@ if($fmapURL !~ /:\/\/$hostname\//) {
 
 sub downloadFile {
 	foreach my $file (@_) {
-		system("wget --no-verbose -O $dataPath/$file $fmapURL/FMAP_data/$file") if(not -r $file or $redownload);
+		system("wget --no-verbose -O $dataPath/$file $fmapURL/FMAP_data/$file") if(not -r "$dataPath/$file" or $redownload);
 	}
 }
 
