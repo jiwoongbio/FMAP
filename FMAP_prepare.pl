@@ -5,8 +5,10 @@ use Cwd 'abs_path';
 use Getopt::Long;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
+my $dataPath = "$fmapPath/FMAP_data";
+system("mkdir -p $dataPath");
+
 my $fmapURL = 'http://qbrc.swmed.edu/FMAP';
-system("mkdir -p $fmapPath/FMAP_data");
 
 GetOptions('h' => \(my $help = ''),
 	'r' => \(my $redownload = ''),
@@ -33,7 +35,7 @@ die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPat
 downloadFile('database');
 my $database = loadDefaultDatabase();
 downloadFile("$database.fasta.gz");
-my $databasePath = "$fmapPath/FMAP_data/$database";
+my $databasePath = "$dataPath/$database";
 system("gzip -df $databasePath.fasta.gz") if(-r "$databasePath.fasta.gz");
 if(-r "$databasePath.fasta") {
 	generateSequenceLengthFile("$databasePath.length.txt", "$databasePath.fasta");
@@ -52,7 +54,7 @@ if($downloadPrebuiltKEGG) {
 	downloadFile('KEGG_orthology2pathway.txt');
 } else {
 	open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/link/pathway/ko |');
-	open(my $writer, "> $fmapPath/FMAP_data/KEGG_orthology2pathway.txt");
+	open(my $writer, "> $dataPath/KEGG_orthology2pathway.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($orthology, $pathway) = split(/\t/, $line);
@@ -69,7 +71,7 @@ if($downloadPrebuiltKEGG) {
 	downloadFile('KEGG_orthology.txt');
 } else {
 	open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/ko |');
-	open(my $writer, "> $fmapPath/FMAP_data/KEGG_orthology.txt");
+	open(my $writer, "> $dataPath/KEGG_orthology.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($orthology, $definition) = split(/\t/, $line);
@@ -83,7 +85,7 @@ if($downloadPrebuiltKEGG) {
 	downloadFile('KEGG_pathway.txt');
 } else {
 	open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/pathway |');
-	open(my $writer, "> $fmapPath/FMAP_data/KEGG_pathway.txt");
+	open(my $writer, "> $dataPath/KEGG_pathway.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($pathway, $definition) = split(/\t/, $line);
@@ -96,18 +98,18 @@ if($downloadPrebuiltKEGG) {
 
 # Operon
 chomp(my $hostname = `hostname`);
-if($hostname ne 'qbrc.swmed.edu') {
+if($fmapURL !~ /:\/\/$hostname\//) {
 	downloadFile('known_operon.KEGG_orthology.txt', 'known_operon.definition.txt', 'known_operon.KEGG_orthology_definition.txt', 'known_operon.KEGG_pathway.txt');
 }
 
 sub downloadFile {
 	foreach my $file (@_) {
-		system("wget --no-verbose -O $fmapPath/FMAP_data/$file $fmapURL/FMAP_data/$file") if(not -r $file or $redownload);
+		system("wget --no-verbose -O $dataPath/$file $fmapURL/FMAP_data/$file") if(not -r $file or $redownload);
 	}
 }
 
 sub loadDefaultDatabase {
-	open(my $reader, "$fmapPath/FMAP_data/database");
+	open(my $reader, "$dataPath/database");
 	chomp(my $line = <$reader>);
 	close($reader);
 	return $1 if($line =~ /^([A-Za-z0-9_.]+)/);

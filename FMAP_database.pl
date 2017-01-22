@@ -7,6 +7,7 @@ use Bio::DB::Taxonomy;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 my $dataPath = "$fmapPath/FMAP_data";
+system("mkdir -p $dataPath");
 
 GetOptions('h' => \(my $help = ''),
 	'r' => \(my $redownload = ''));
