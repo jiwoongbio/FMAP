@@ -32,11 +32,17 @@ die "ERROR: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 
 die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
 # Database
-downloadFile('database');
-my $database = loadDefaultDatabase();
-downloadFile("$database.fasta.gz");
-my $databasePath = "$dataPath/$database";
-system("gzip -df $databasePath.fasta.gz") if(-r "$databasePath.fasta.gz");
+my ($database, $databasePath) = ('', '');
+if(-r "$dataPath/database") {
+	$database = loadDefaultDatabase();
+	$databasePath = "$dataPath/$database";
+} else {
+	downloadFile('database');
+	$database = loadDefaultDatabase();
+	downloadFile("$database.fasta.gz");
+	system("gzip -df $dataPath/$database.fasta.gz");
+	$databasePath = "$dataPath/$database";
+}
 if(-r "$databasePath.fasta") {
 	generateSequenceLengthFile("$databasePath.length.txt", "$databasePath.fasta");
 	if($mapper eq 'diamond') {
