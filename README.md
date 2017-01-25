@@ -163,6 +163,28 @@ Options: -h       display this help message
 ```
 
 
+## Command orders
+
+* Use the prebuilt database (UniRef90 and bacteria/archaea/fungi)
+  1. FMAP_download.pl
+  2. FMAP_mapping.pl
+  3. FMAP_quantification.pl
+  4. FMAP_table.pl
+  5. FMAP_comparison.pl
+  6. FMAP_pathway.pl
+  7. FMAP_operon.pl
+
+* Use a custom database (you can define UniRef and taxonomy.)
+  1. FMAP_database.pl
+  2. FMAP_prepare.pl
+  3. FMAP_mapping.pl
+  4. FMAP_quantification.pl
+  5. FMAP_table.pl
+  6. FMAP_comparison.pl
+  7. FMAP_pathway.pl
+  8. FMAP_operon.pl
+
+
 ## Citation
 
 Kim J, Kim MS, Koh AY, Xie Y, Zhan X.
