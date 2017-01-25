@@ -18,7 +18,7 @@ if($help) {
 Usage:   perl FMAP_download.pl [options]
 
 Options: -h       display this help message
-         -m FILE  executable file path of mapping program, "diamond" or "usearch"
+         -m FILE  executable file path of mapping program, "diamond" or "usearch" [$mapperPath]
          -k       download prebuilt KEGG files
          -x       download only KEGG files
 

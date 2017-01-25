@@ -17,11 +17,11 @@ GetOptions('h' => \(my $help = ''),
 if($help) {
 	die <<EOF;
 
-Usage:   perl FMAP_download.pl [options]
+Usage:   perl FMAP_prepare.pl [options]
 
 Options: -h       display this help message
          -r       redownload data
-         -m FILE  executable file path of mapping program, "diamond" or "usearch"
+         -m FILE  executable file path of mapping program, "diamond" or "usearch" [$mapperPath]
          -k       download prebuilt KEGG files
 
 EOF
@@ -56,50 +56,59 @@ if(-r "$databasePath.fasta") {
 }
 
 # KEGG
-if($downloadPrebuiltKEGG) {
-	downloadFile('KEGG_orthology2pathway.txt');
-} else {
-	open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/link/pathway/ko |');
-	open(my $writer, "> $dataPath/KEGG_orthology2pathway.txt");
-	while(my $line = <$reader>) {
-		chomp($line);
-		my ($orthology, $pathway) = split(/\t/, $line);
-		$orthology =~ s/^ko://;
-		$pathway =~ s/^path://;
-		if($pathway =~ /^map[0-9]+$/) {
-			print $writer join("\t", $orthology, $pathway), "\n";
+{
+	my $file = 'KEGG_orthology2pathway.txt';
+	if($downloadPrebuiltKEGG) {
+		downloadFile($file);
+	} elsif(not -r "$dataPath/$file" or $redownload) {
+		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/link/pathway/ko |');
+		open(my $writer, "> $dataPath/$file");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($orthology, $pathway) = split(/\t/, $line);
+			$orthology =~ s/^ko://;
+			$pathway =~ s/^path://;
+			if($pathway =~ /^map[0-9]+$/) {
+				print $writer join("\t", $orthology, $pathway), "\n";
+			}
 		}
+		close($reader);
+		close($writer);
 	}
-	close($reader);
-	close($writer);
 }
-if($downloadPrebuiltKEGG) {
-	downloadFile('KEGG_orthology.txt');
-} else {
-	open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/ko |');
-	open(my $writer, "> $dataPath/KEGG_orthology.txt");
-	while(my $line = <$reader>) {
-		chomp($line);
-		my ($orthology, $definition) = split(/\t/, $line);
-		$orthology =~ s/^ko://;
-		print $writer join("\t", $orthology, $definition), "\n";
+{
+	my $file = 'KEGG_orthology.txt';
+	if($downloadPrebuiltKEGG) {
+		downloadFile($file);
+	} elsif(not -r "$dataPath/$file" or $redownload) {
+		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/ko |');
+		open(my $writer, "> $dataPath/$file");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($orthology, $definition) = split(/\t/, $line);
+			$orthology =~ s/^ko://;
+			print $writer join("\t", $orthology, $definition), "\n";
+		}
+		close($reader);
+		close($writer);
 	}
-	close($reader);
-	close($writer);
 }
-if($downloadPrebuiltKEGG) {
-	downloadFile('KEGG_pathway.txt');
-} else {
-	open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/pathway |');
-	open(my $writer, "> $dataPath/KEGG_pathway.txt");
-	while(my $line = <$reader>) {
-		chomp($line);
-		my ($pathway, $definition) = split(/\t/, $line);
-		$pathway =~ s/^path://;
-		print $writer join("\t", $pathway, $definition), "\n";
+{
+	my $file = 'KEGG_pathway.txt';
+	if($downloadPrebuiltKEGG) {
+		downloadFile($file);
+	} elsif(not -r "$dataPath/$file" or $redownload) {
+		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/pathway |');
+		open(my $writer, "> $dataPath/$file");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($pathway, $definition) = split(/\t/, $line);
+			$pathway =~ s/^path://;
+			print $writer join("\t", $pathway, $definition), "\n";
+		}
+		close($reader);
+		close($writer);
 	}
-	close($reader);
-	close($writer);
 }
 
 # Operon

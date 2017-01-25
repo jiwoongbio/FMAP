@@ -11,10 +11,10 @@ my $databasePath = "$fmapPath/FMAP_data/$database";
 
 GetOptions('h' => \(my $help = ''),
 	'c' => \(my $cpmInsteadOfRPKM = ''),
+	'w=s' => \(my $readNameWeightFile = ''),
 	'i=f' => \(my $minimumPercentIdentity = 80),
 	'o=s' => \(my $orthologyDefinitionFile = ''),
 	'p=s' => \(my $proteinOrthologyFile = ''),
-	'w=s' => \(my $readNameWeightFile = ''),
 	'd=s' => \$databasePath);
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;

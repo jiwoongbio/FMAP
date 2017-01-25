@@ -24,10 +24,10 @@ if($help || scalar(@ARGV) == 0) {
 Usage:   perl FMAP_mapping.pl [options] input1.fastq|input1.fasta [input2.fastq|input2.fasta [...]] > blastx_hits.txt
 
 Options: -h       display this help message
-         -m FILE  executable file path of mapping program, "diamond" or "usearch" [diamond]
-         -p INT   number of threads [1]
-         -e FLOAT maximum e-value to report alignments for "diamond" [0.001]
-         -i FLOAT minimum identity for "usearch_global" [0.8]
+         -m FILE  executable file path of mapping program, "diamond" or "usearch" [$mapperPath]
+         -p INT   number of threads [$mappingThreads]
+         -e FLOAT maximum e-value to report alignments for "diamond" [$evalue]
+         -i FLOAT minimum identity for "usearch_global" [$identity]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
 
 EOF

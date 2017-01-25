@@ -44,7 +44,7 @@ if(@taxonIdList) {
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
 	my %tokenHash = ('UniProtKB-AC' => '');
 	open(my $reader, "gzip -dc $file | sort --field-separator='\t' -k1,1 |");
-	open(my $writer, "| sort --field-separator='\t' -k1,1 -k2,2 | uniq > $dataPath/gene_$prefix.txt");
+	open(my $writer, "| sort --field-separator='\t' -k1,1 -k2,2 -k3,3 | uniq | cut -f2,3 > $dataPath/gene_$prefix.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my @tokenList = split(/\t/, $line);
@@ -54,15 +54,15 @@ if(@taxonIdList) {
 		}
 		push(@{$tokenHash{$tokenList[1]}}, $tokenList[2]);
 	}
+	printGeneUniref() if($tokenHash{'UniProtKB-AC'} ne '');
 	close($reader);
 	close($writer);
-	printGeneUniref() if($tokenHash{'UniProtKB-AC'} ne '');
 
 	sub printGeneUniref {
 		my ($taxonIdList, $geneList, $unirefList) = @tokenHash{'NCBI_TaxID', 'KEGG', "UniRef$unirefIdentity"};
 		if(scalar(keys %taxonIdHash) == 0 || (defined($taxonIdList) && grep {defined($taxonIdHash{$_})} @$taxonIdList)) {
 			if(defined($geneList) && defined($unirefList)) {
-				print $writer join("\t", $_, join(',', @$unirefList)), "\n" foreach(@$geneList);
+				print $writer join("\t", $_->[1], $_->[0], join(',', @$unirefList)), "\n" foreach(map {[$_, split(/:/, $_)]} @$geneList);
 			}
 		}
 	}
@@ -72,6 +72,7 @@ my %unirefOrthologyCountHash = ();
 	my $orgCode = '';
 	my %geneUnirefHash = ();
 	open(my $reader, "$dataPath/gene_$prefix.txt");
+	open(my $writerFail, "> $dataPath/gene_$prefix.no_orthology.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($gene, $uniref) = split(/\t/, $line);
@@ -82,8 +83,9 @@ my %unirefOrthologyCountHash = ();
 		}
 		$geneUnirefHash{$gene}->{$uniref} = 1;
 	}
-	close($reader);
 	addUnirefOrthology() if($orgCode ne '');
+	close($reader);
+	close($writerFail);
 
 	sub addUnirefOrthology {
 		my %geneOrthologyHash = ();
@@ -103,7 +105,7 @@ my %unirefOrthologyCountHash = ();
 			if(scalar(@unirefList) == 1 && scalar(@orthologyList) == 1) {
 				$unirefOrthologyCountHash{$unirefList[0]}->{$orthologyList[0]} += 1;
 			} else {
-				print STDERR join("\t", $gene, join(',', @unirefList), join(',', @orthologyList)), "\n";
+				print $writerFail join("\t", $gene, join(',', @unirefList), join(',', @orthologyList)), "\n";
 			}
 		}
 	}
@@ -115,6 +117,7 @@ my %unirefOrthologyCountHash = ();
 	my $printSequence = 0;
 	open(my $reader, "gzip -dc $file |");
 	open(my $writer, "> $dataPath/orthology_$prefix.fasta");
+	open(my $writerFail, "> $dataPath/orthology_$prefix.ambiguous.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
 		if($line =~ s/^>//) {
@@ -125,7 +128,7 @@ my %unirefOrthologyCountHash = ();
 					print $writer ">$orthologyList[0]_$uniref\n";
 					$printSequence = 1;
 				} else {
-					print STDERR join("\t", $uniref, $_, $orthologyCountHash->{$_}), "\n" foreach(@orthologyList);
+					print $writerFail join("\t", $uniref, $_, $orthologyCountHash->{$_}), "\n" foreach(@orthologyList);
 				}
 			}
 		} elsif($printSequence) {
@@ -133,6 +136,8 @@ my %unirefOrthologyCountHash = ();
 		}
 	}
 	close($reader);
+	close($writer);
+	close($writerFail);
 }
 {
 	open(my $writer, "> $dataPath/database");

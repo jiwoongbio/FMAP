@@ -14,6 +14,8 @@ GetOptions('h' => \(my $help = ''),
 	'f=f' => \(my $foldchangeCutoff = 2),
 	'p=f' => \(my $pvalueCutoff = 0.05),
 	'a=f' => \(my $padjustCutoff = 1));
+my @availableTestList = ('kruskal', 'anova', 'poisson', 'quasipoisson', 'metagenomeSeq');
+my $availableTests = join(', ', map {"\"$_\""} @availableTestList);
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -21,12 +23,12 @@ Usage:   perl FMAP_all.pl [options] input.config [output_prefix]
 
 Options: -h       display this help message
          -s       generate a script, but not execute it
-         -m FILE  mapping: executable file path of mapping program, "diamond" or "usearch" [diamond]
-         -t INT   mapping: number of threads [1]
-         -c STR   comparison: statistical test for comparing sample groups, "kruskal" or "anova", "poisson", "quasipoisson" [kruskal]
-         -f FLOAT comparison: fold change cutoff [2]
-         -p FLOAT comparison: p-value cutoff [0.05]
-         -a FLOAT comparison: FDR-adjusted p-value cutoff [1]
+         -m FILE  mapping: executable file path of mapping program, "diamond" or "usearch" [$mapperPath]
+         -t INT   mapping: number of threads [$mappingThreads]
+         -c STR   comparison: statistical test for comparing sample groups, $availableTests [$test]
+         -f FLOAT comparison: fold change cutoff [$foldchangeCutoff]
+         -p FLOAT comparison: p-value cutoff [$pvalueCutoff]
+         -a FLOAT comparison: FDR-adjusted p-value cutoff [$padjustCutoff]
 
 EOF
 }
