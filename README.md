@@ -1,6 +1,7 @@
 # FMAP
 
 Functional Mapping and Analysis Pipeline for metagenomics and metatranscriptomics studies
+Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/.
 
 
 ## Features
