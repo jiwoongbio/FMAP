@@ -39,7 +39,9 @@ die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPat
 die "ERROR: The test is not provided.\n" if(scalar(grep {$test eq $_} ('kruskal', 'anova', 'poisson', 'quasipoisson')) == 0);
 
 my ($configFile, $outputPrefix) = @ARGV;
+die "ERROR: The configuration file is not available.\n" if(not -r $configFile);
 $outputPrefix = 'FMAP_output' unless(defined($outputPrefix));
+
 my %sampleInputFileListHash = ();
 my %groupSampleListHash = ();
 open(my $reader, $configFile);
