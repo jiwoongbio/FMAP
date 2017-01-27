@@ -55,7 +55,7 @@ my @groupList = sort keys %groupSampleListHash;
 @{$groupSampleListHash{$_}} = sort @{$groupSampleListHash{$_}} foreach(@groupList);
 
 open(my $writer, "> $outputPrefix.sh");
-print $writer "perl $fmapPath/FMAP_download.pl -m $mapperPath\n";
+print $writer "perl $fmapPath/FMAP_prepare.pl -m $mapperPath\n";
 print $writer "\n";
 
 foreach(grep {$_ eq 'control'} @groupList) {
