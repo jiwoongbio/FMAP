@@ -126,7 +126,7 @@ Options: -h       display this help message
 Usage:   perl FMAP_comparison.pl [options] abundance_table.txt control1[,control2[...]] case1[,case2[...]] [...] > orthology_test_stat.txt
 
 Options: -h       display this help message
-         -c STR   statistical test for comparing sample groups, "kruskal" or "anova", "poisson", "quasipoisson" [kruskal]
+         -t STR   statistical test for comparing sample groups, "kruskal", "anova", "poisson", "quasipoisson", "metagenomeSeq" [kruskal]
          -f FLOAT fold change cutoff [2]
          -p FLOAT p-value cutoff [0.05]
          -a FLOAT FDR-adjusted p-value cutoff [1]

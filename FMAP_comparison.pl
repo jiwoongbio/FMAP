@@ -5,7 +5,7 @@ use Getopt::Long;
 use Statistics::R;
 
 GetOptions('h' => \(my $help = ''),
-	'c=s' => \(my $test = 'kruskal'),
+	't=s' => \(my $test = 'kruskal'),
 	'f=f' => \(my $foldchangeCutoff = 2),
 	'p=f' => \(my $pvalueCutoff = 0.05),
 	'a=f' => \(my $padjustCutoff = 1));
@@ -17,7 +17,7 @@ if($help || scalar(@ARGV) == 0) {
 Usage:   perl FMAP_comparison.pl [options] abundance_table.txt control1[,control2[...]] case1[,case2[...]] [...] > orthology_test_stat.txt
 
 Options: -h       display this help message
-         -c STR   statistical test for comparing sample groups, $availableTests [$test]
+         -t STR   statistical test for comparing sample groups, $availableTests [$test]
          -f FLOAT fold change cutoff [$foldchangeCutoff]
          -p FLOAT p-value cutoff [$pvalueCutoff]
          -a FLOAT FDR-adjusted p-value cutoff [$padjustCutoff]
