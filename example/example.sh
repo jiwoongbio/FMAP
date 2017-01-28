@@ -13,8 +13,8 @@ wget -q -O - http://qbrc.swmed.edu/FMAP/example/case2.fastq.gz > case2.fastq.gz
 wget -q -O - http://qbrc.swmed.edu/FMAP/example/case3.fastq.gz > case3.fastq.gz
 wget -q -O - http://qbrc.swmed.edu/FMAP/example/case4.fastq.gz > case4.fastq.gz
 
-# FMAP_download.pl: download reference data
-perl $FMAP_DIR/FMAP_download.pl
+# FMAP_prepare.pl: prepare database files and download KEGG and operon data
+perl $FMAP_DIR/FMAP_prepare.pl -k
 
 # FMAP_mapping.pl: mapping sequencing reads to reference proteins
 perl $FMAP_DIR/FMAP_mapping.pl -p $MAPPING_THREADS control1.fastq.gz > control1.mapping.txt
