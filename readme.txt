@@ -36,6 +36,10 @@ cpanm Statistics::R
 DIAMOND: http://ab.inf.uni-tuebingen.de/software/diamond/
 USEARCH: http://www.drive5.com/usearch/
 
+5. Linux commands: wget, cat, sort
+
+6. Perl module "Bio::DB::Taxonomy": http://search.cpan.org/dist/BioPerl/Bio/DB/Taxonomy.pm (which is required only if you want to build a custom database.)
+
 
 INPUTS AND OUTPUTS
 ==================

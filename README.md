@@ -18,11 +18,11 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 
 ## Requirements
 
-* Perl - scripting language
+* [Perl](https://www.perl.org) - scripting language
 
-* R - statistical computing
+* [R](http://www.r-project.org) - statistical computing
 
-* Statistics::R - Perl interface with the R statistical program
+* [Statistics::R](http://search.cpan.org/~fangly/Statistics-R-0.33/lib/Statistics/R.pm) - Perl interface with the R statistical program
   * Use CPAN to install the module  
    ```
    perl -MCPAN -e 'install Statistics::R'
@@ -40,7 +40,9 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 
 * Mapping program providing BLASTX search of sequencing reads: [DIAMOND](http://ab.inf.uni-tuebingen.de/software/diamond/) or [USEARCH](http://www.drive5.com/usearch/)
 
-* Linux commands: ```wget```, ```cat```, ```sort```
+* Linux commands: ```[wget](https://www.gnu.org/software/wget/)```, ```cat```, ```sort```
+
+* [Bio::DB::Taxonomy](http://search.cpan.org/dist/BioPerl/Bio/DB/Taxonomy.pm) - Access to a taxonomy database (which is required only if you want to build a custom database.)
 
 
 ## Command usages
