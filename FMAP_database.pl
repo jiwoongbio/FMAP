@@ -29,7 +29,7 @@ if(@taxonIdList) {
 	if(not -r "$dataPath/nodes.dmp" or not -r "$dataPath/names.dmp" or $redownload) {
 		my $URL = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz";
 		my $file = "$dataPath/taxdump.tar.gz";
-		system("wget --no-verbose -O $file $URL");
+		system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
 		die "ERROR: '$file' has zero size.\n" if(-z $file);
 		system("cd $dataPath; tar -zxf taxdump.tar.gz nodes.dmp");
 		system("cd $dataPath; tar -zxf taxdump.tar.gz names.dmp");
