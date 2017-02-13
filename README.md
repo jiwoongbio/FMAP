@@ -53,7 +53,9 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
   * The following data files will be downloaded through FTP connection. If you have a problem in the FTP connection, please download the files through another method and copy them into "FMAP_data" directory before executing "FMAP_database.pl" command.  
     ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz  
     ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping.dat.gz  
-    ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref$unirefIdentity/uniref90.fasta.gz  
+    ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref100/uniref100.fasta.gz  
+    or ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz  
+    or ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref50/uniref50.fasta.gz  
   * Require HTTP connection for KEGG API.
 ```
 Usage:   perl FMAP_database.pl [options] 50|90|100 [NCBI_TaxID [...]]
