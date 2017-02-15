@@ -57,6 +57,23 @@ if(-r "$databasePath.fasta") {
 
 # KEGG
 {
+	my $file = 'KEGG_orthology.txt';
+	if($downloadPrebuiltKEGG) {
+		downloadFile($file);
+	} elsif(not -r "$dataPath/$file" or $redownload) {
+		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/ko |');
+		open(my $writer, "> $dataPath/$file");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($orthology, $definition) = split(/\t/, $line);
+			$orthology =~ s/^ko://;
+			print $writer join("\t", $orthology, $definition), "\n";
+		}
+		close($reader);
+		close($writer);
+	}
+}
+{
 	my $file = 'KEGG_orthology2pathway.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -77,23 +94,6 @@ if(-r "$databasePath.fasta") {
 	}
 }
 {
-	my $file = 'KEGG_orthology.txt';
-	if($downloadPrebuiltKEGG) {
-		downloadFile($file);
-	} elsif(not -r "$dataPath/$file" or $redownload) {
-		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/ko |');
-		open(my $writer, "> $dataPath/$file");
-		while(my $line = <$reader>) {
-			chomp($line);
-			my ($orthology, $definition) = split(/\t/, $line);
-			$orthology =~ s/^ko://;
-			print $writer join("\t", $orthology, $definition), "\n";
-		}
-		close($reader);
-		close($writer);
-	}
-}
-{
 	my $file = 'KEGG_pathway.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -104,7 +104,44 @@ if(-r "$databasePath.fasta") {
 			chomp($line);
 			my ($pathway, $definition) = split(/\t/, $line);
 			$pathway =~ s/^path://;
-			print $writer join("\t", $pathway, $definition), "\n";
+			if($pathway =~ /^map[0-9]+$/) {
+				print $writer join("\t", $pathway, $definition), "\n";
+			}
+		}
+		close($reader);
+		close($writer);
+	}
+}
+{
+	my $file = 'KEGG_orthology2module.txt';
+	if($downloadPrebuiltKEGG) {
+		downloadFile($file);
+	} elsif(not -r "$dataPath/$file" or $redownload) {
+		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/link/module/ko |');
+		open(my $writer, "> $dataPath/$file");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($orthology, $module) = split(/\t/, $line);
+			$orthology =~ s/^ko://;
+			$module =~ s/^md://;
+			print $writer join("\t", $orthology, $module), "\n";
+		}
+		close($reader);
+		close($writer);
+	}
+}
+{
+	my $file = 'KEGG_module.txt';
+	if($downloadPrebuiltKEGG) {
+		downloadFile($file);
+	} elsif(not -r "$dataPath/$file" or $redownload) {
+		open(my $reader, 'wget --no-verbose -O - http://rest.kegg.jp/list/module |');
+		open(my $writer, "> $dataPath/$file");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($module, $definition) = split(/\t/, $line);
+			$module =~ s/^md://;
+			print $writer join("\t", $module, $definition), "\n";
 		}
 		close($reader);
 		close($writer);

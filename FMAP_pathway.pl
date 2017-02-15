@@ -19,7 +19,9 @@ EOF
 }
 
 my ($inputFile) = @ARGV;
-die "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
+foreach($inputFile, "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt", "$fmapPath/FMAP_data/KEGG_pathway.txt") {
+	die "ERROR: '$_' is not readable.\n" unless(-r $_);
+}
 my %targetOrthologyColorHash = ();
 {
 	open(my $reader, $inputFile);
@@ -37,10 +39,10 @@ my %targetOrthologyColorHash = ();
 	}
 	close($reader);
 }
-my $totalTargetOrthologyCount = scalar(keys %targetOrthologyColorHash);
+my $targetOrthologyCount = scalar(keys %targetOrthologyColorHash);
 
 my %pathwayTargetOrthologyListHash = ();
-my %pathwayTotalOrthologyCountHash = ();
+my %pathwayOrthologyCountHash = ();
 my %orthologyHash = ();
 open(my $reader, "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt");
 while(my $line = <$reader>) {
@@ -48,11 +50,11 @@ while(my $line = <$reader>) {
 	my ($orthology, $pathway) = split(/\t/, $line);
 	my $color = $targetOrthologyColorHash{$orthology};
 	push(@{$pathwayTargetOrthologyListHash{$pathway}}, "$orthology $color") if(defined($color));
-	$pathwayTotalOrthologyCountHash{$pathway} += 1;
+	$pathwayOrthologyCountHash{$pathway} += 1;
 	$orthologyHash{$orthology} = 1;
 }
 close($reader);
-my $totalOrthologyCount = scalar(keys %orthologyHash);
+my $orthologyCount = scalar(keys %orthologyHash);
 
 my %pathwayDefinitionHash = ();
 {
@@ -69,13 +71,13 @@ print join("\t", 'pathway', 'definition', 'orthology.count', 'coverage', 'pvalue
 my $R = Statistics::R->new();
 foreach my $pathway (sort keys %pathwayTargetOrthologyListHash) {
 	my $pathwayTargetOrthologyCount = scalar(my @pathwayTargetOrthologyList = @{$pathwayTargetOrthologyListHash{$pathway}});
-	my $pathwayTotalOrthologyCount = $pathwayTotalOrthologyCountHash{$pathway};
-	my $counts = join(',', $pathwayTargetOrthologyCount, $pathwayTotalOrthologyCount - $pathwayTargetOrthologyCount, $totalTargetOrthologyCount - $pathwayTargetOrthologyCount, $totalOrthologyCount - $pathwayTotalOrthologyCount - $totalTargetOrthologyCount + $pathwayTargetOrthologyCount);
+	my $pathwayOrthologyCount = $pathwayOrthologyCountHash{$pathway};
+	my $counts = join(',', $pathwayTargetOrthologyCount, $pathwayOrthologyCount - $pathwayTargetOrthologyCount, $targetOrthologyCount - $pathwayTargetOrthologyCount, $orthologyCount - $pathwayOrthologyCount - $targetOrthologyCount + $pathwayTargetOrthologyCount);
 	$R->run("p.value <- fisher.test(matrix(c($counts), 2), alternative = \"greater\")\$p.value");
 	my $pvalue = $R->get("p.value");
 	my $definition = $pathwayDefinitionHash{$pathway};
 	$definition = '' unless(defined($definition));
-	my $coverage = $pathwayTargetOrthologyCount / $pathwayTotalOrthologyCount;
+	my $coverage = $pathwayTargetOrthologyCount / $pathwayOrthologyCount;
 	print join("\t", $pathway, $definition, $pathwayTargetOrthologyCount, $coverage, $pvalue, join('|', @pathwayTargetOrthologyList)), "\n";
 }
 $R->stop();
