@@ -106,6 +106,7 @@ print $writer "\n";
 
 print $writer "perl $fmapPath/FMAP_operon.pl $outputPrefix.comparison.txt > $outputPrefix.operon.txt\n";
 print $writer "perl $fmapPath/FMAP_pathway.pl $outputPrefix.comparison.txt > $outputPrefix.pathway.txt\n";
+print $writer "perl $fmapPath/FMAP_module.pl $outputPrefix.comparison.txt > $outputPrefix.module.txt\n";
 close($writer);
 
 print "The script file \"$outputPrefix.sh\" was generated.\n";
