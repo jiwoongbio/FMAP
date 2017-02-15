@@ -60,7 +60,7 @@ perl $FMAP_DIR/FMAP_comparison.pl example.table.txt 'control1,control2,control3,
 # FMAP_operon.pl: mapping differentially-abundant genes to operons
 perl $FMAP_DIR/FMAP_operon.pl example.comparison.txt > example.operon.txt
 
-# FMAP_pathway.pl: mapping differentially-abundant genes to pathways
+# FMAP_pathway.pl: mapping differentially-abundant genes to KEGG pathways
 perl $FMAP_DIR/FMAP_pathway.pl example.comparison.txt > example.pathway.txt
 
 # FMAP_module.pl: mapping differentially-abundant genes to KEGG modules
