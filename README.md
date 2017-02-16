@@ -11,7 +11,7 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 
 * Identification of differentially-abundant genes [KEGG Orthology](http://www.genome.jp/kegg/ko.html)
 
-* Mapping differentially-abundant genes to pathways ([KEGG Pathway](http://www.genome.jp/kegg/pathway.html))
+* Mapping differentially-abundant genes to pathways and modules ([KEGG Pathway](http://www.genome.jp/kegg/pathway.html) and [KEGG Module](http://www.genome.jp/kegg/module.html))
 
 * Mapping differentially-abundant genes to operons ([ODB (v3)](http://operondb.jp))
 
@@ -146,6 +146,17 @@ Usage:   perl FMAP_pathway.pl [options] orthology_test_stat.txt > pathway.txt
 Options: -h       display this help message
 ```
 
+* **FMAP_module.pl**
+  * Input: output of "FMAP_comparison.pl"
+  * Output: modules enriched in filter-passed orthologies
+  * Output columns: [KEGG Module](http://www.genome.jp/kegg/module.html) ID, module definition, orthology count, coverage, p-value, [KEGG Orthology](http://www.genome.jp/kegg/ko.html) IDs with colors
+  * [KEGG Orthology](http://www.genome.jp/kegg/ko.html) IDs with colors: input of [KEGG Pathway](http://www.genome.jp/kegg/pathway.html) mapping (http://www.kegg.jp/kegg/tool/map_pathway2.html)
+```
+Usage:   perl FMAP_module.pl [options] orthology_test_stat.txt > module.txt
+
+Options: -h       display this help message
+```
+
 * **FMAP_operon.pl**
   * Input: output of "FMAP_comparison.pl"
   * Output: operons consisting of filter-passed orthologies
@@ -184,7 +195,8 @@ Options: -h       display this help message
   4. FMAP_table.pl
   5. FMAP_comparison.pl
   6. FMAP_pathway.pl
-  7. FMAP_operon.pl
+  7. FMAP_module.pl
+  8. FMAP_operon.pl
 
 * Use a custom database (you can define UniRef and taxonomy.)
   1. FMAP_database.pl
@@ -194,7 +206,8 @@ Options: -h       display this help message
   5. FMAP_table.pl
   6. FMAP_comparison.pl
   7. FMAP_pathway.pl
-  8. FMAP_operon.pl
+  8. FMAP_module.pl
+  9. FMAP_operon.pl
 
 
 ## Citation
