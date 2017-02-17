@@ -49,7 +49,7 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 
 * **FMAP_database.pl**
   * Workflow
-![](SpliceFisher.method.png)
+![](FMAP_database.workflow.png)
   * Input: [UniRef](http://www.uniprot.org/help/uniref) sequence identity (50, 90, or 100), [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy) IDs (numerical)
   * Require [Bio::DB::Taxonomy](http://search.cpan.org/dist/BioPerl/Bio/DB/Taxonomy.pm).
   * The following data files will be downloaded through FTP connection. If you have a problem in the FTP connection, please download the files through another method and copy them into "FMAP_data" directory before executing "FMAP_database.pl" command.  
