@@ -170,6 +170,21 @@ Options: -h       display this help message
          -a       print single-gene operons as well
 ```
 
+* **FMAP_plot.pl**
+  * Input: output of "FMAP_pathway.pl", "FMAP_module.pl", or "FMAP_operon.pl"
+  * Output: PNG format image file of p-value plot
+```
+Usage:   perl FMAP_plot.pl [options] pathway.txt|module.txt|operon.txt plot.png
+
+Options: -h       display this help message
+         -w INT   plot width [1200]
+         -h INT   plot height [800]
+         -p INT   plot point size [20]
+         -l FLOAT plot left margin [20]
+         -c FLOAT p-value cutoff [0.05]
+         -d       do not print definition
+```
+
 * **FMAP_all.pl**
   * Input: configuration table file
   * Input columns: group (control, ...), sample name, input file of "FMAP_mapping.pl"
