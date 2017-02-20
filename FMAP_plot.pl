@@ -10,7 +10,8 @@ GetOptions('h' => \(my $help = ''),
 	'h|height=i' => \$parameterHash{'height'},
 	'p|pointsize=i' => \$parameterHash{'pointsize'},
 	'l|leftmargin=f' => \$parameterHash{'leftmargin'},
-	'c|cutoff=f' => \(my $cutoff = 0.05),
+	'v|pvalue=f' => \(my $pvalueCutoff = 0.05),
+	'c|coverage=f' => \(my $coverageCutoff = -1),
 	'd' => \(my $doNotPrintDefinition = ''),
 );
 if($help || scalar(@ARGV) == 0) {
@@ -23,17 +24,36 @@ Options: -h       display this help message
          -h INT   plot height [$parameterHash{'height'}]
          -p INT   plot point size [$parameterHash{'pointsize'}]
          -l FLOAT plot left margin [$parameterHash{'leftmargin'}]
-         -c FLOAT p-value cutoff [$cutoff]
+         -v FLOAT p-value cutoff [$pvalueCutoff]
+         -c FLOAT coverage cutoff [0 for pathway, 1 for module and operons]
          -d       do not print definition
 
 EOF
 }
 my ($inputFile, $pngFile) = @ARGV;
+foreach($inputFile) {
+	die "ERROR: '$_' is not readable.\n" unless(-r $_);
+}
+foreach($pngFile) {
+	my $directory = /^(.*\/)/ ? $1 : '.';
+	die "ERROR: '$directory' is not a writable directory.\n" unless(-d $directory && -w $directory);
+}
+
 my %pvalueHash = ();
 {
 	open(my $reader, $inputFile);
 	chomp(my $line = <$reader>);
 	my @columnList = split(/\t/, $line);
+	my %columnHash = map {$_ => 1} @columnList;
+	if($coverageCutoff < 0) {
+		if(defined($columnHash{'pathway'})) {
+			$coverageCutoff = 0;
+		} elsif(defined($columnHash{'module'})) {
+			$coverageCutoff = 1;
+		} elsif(defined($columnHash{'operons'})) {
+			$coverageCutoff = 1;
+		}
+	}
 	while(my $line = <$reader>) {
 		chomp($line);
 		my %tokenHash = ();
@@ -43,7 +63,7 @@ my %pvalueHash = ();
 			my $definition = $tokenHash{'definition'};
 			$name = "$name $definition" if(defined($definition) && $definition ne '');
 		}
-		$pvalueHash{$name} = $_ if(($_ = $tokenHash{'pvalue'}) <= $cutoff);
+		$pvalueHash{$name} = $tokenHash{'pvalue'} if($tokenHash{'pvalue'} <= $pvalueCutoff && $tokenHash{'coverage'} >= $coverageCutoff);
 	}
 	close($reader);
 }
