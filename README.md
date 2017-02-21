@@ -48,7 +48,7 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 ## Command usages
 
 * **FMAP_database.pl**
-  * Workflow
+  * Process
 ![](FMAP_database.workflow.png)
   * Input: [UniRef](http://www.uniprot.org/help/uniref) sequence identity (50, 90, or 100), [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy) IDs (numerical)
   * Require [Bio::DB::Taxonomy](http://search.cpan.org/dist/BioPerl/Bio/DB/Taxonomy.pm).
