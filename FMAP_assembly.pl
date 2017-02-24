@@ -15,7 +15,7 @@ GetOptions('h' => \(my $help = ''),
 	'e=f' => \(my $evalue = 10),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
 	'c=s' => \@codonList,
-	's=s' => \(my $startCodons = ''),
+	's=s' => \(my $startCodons = 'GTG,ATG,CTG,TTG,ATA,ATC,ATT'),
 	'l=i' => \(my $minimumTranslationLength = 10),
 	'm=f' => \(my $minimumCoverage = 0.8),
 	'q=i' => \(my $minimumMappingQuality = 0),
@@ -32,8 +32,8 @@ Options: -h       display this help message
          -p INT   number of threads [$threads]
          -e FLOAT maximum e-value to report alignments for "diamond" [$evalue]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
-         -c STR   codon e.g. ATG=M
-         -s STR   start codons
+         -c STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
+         -s STR   start codons [$startCodons]
          -l INT   minimum translation length [$minimumTranslationLength]
          -m FLOAT minimum coverage [$minimumCoverage]
          -q INT   minimum mapping quality [$minimumMappingQuality]
@@ -143,7 +143,7 @@ my %contigSequenceLengthHash = ();
 		my ($sequence) = @_;
 		return join('', map {defined($_) ? $_ : 'X'} map {$codonHash{substr($sequence, $_ * 3, 3)}} 0 .. (length($sequence) / 3) - 1);
 	}
-	my %startCodonHash = map {$_ => 1} $startCodons eq '' ? ('GTG', 'ATG', 'CTG', 'TTG', 'ATA', 'ATC', 'ATT') : split(/,/, $startCodons);
+	my %startCodonHash = map {$_ => 1} split(/,/, $startCodons);
 	my %stopCodonHash = map {$_ => 1} (
 		'TAG', # amber
 		'TAA', # ochre
