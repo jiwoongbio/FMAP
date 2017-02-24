@@ -39,7 +39,20 @@ if(@taxonIdList) {
 	my @taxonList = map {$db->get_taxon(-taxonid => $_)} map {eval($_)} @taxonIdList;
 	$taxonIdHash{$_->id} = $_ foreach(@taxonList, (map {$db->get_all_Descendents($_)} @taxonList));
 }
+my %unirefOrthologyCountHash = ();
 {
+	my %uniprotOrthologyListHash = ();
+	{
+		open(my $reader, "wget --no-verbose -O - http://rest.genome.jp/link/ko/uniprot |");
+		while(my $line = <$reader>) {
+			chomp($line);
+			my ($uniprot, $orthology) = split(/\t/, $line);
+			$uniprot =~ s/^up://;
+			$orthology =~ s/^ko://;
+			push(@{$uniprotOrthologyListHash{$uniprot}}, $orthology);
+		}
+		close($reader);
+	}
 	my $URL = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping.dat.gz";
 	my $file = "$dataPath/idmapping.dat.gz";
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
@@ -67,9 +80,13 @@ if(@taxonIdList) {
 				print $writer join("\t", $_->[1], $_->[0], join(',', @$unirefList)), "\n" foreach(map {[$_, split(/:/, $_)]} @$geneList);
 			}
 		}
+		if(defined($unirefList) && defined(my $orthologyList = $uniprotOrthologyListHash{$tokenHash{'UniProtKB-AC'}})) {
+			if(scalar(@$unirefList) == 1 && scalar(@$orthologyList) == 1) {
+				$unirefOrthologyCountHash{$unirefList->[0]}->{$orthologyList->[0]} += 1;
+			}
+		}
 	}
 }
-my %unirefOrthologyCountHash = ();
 {
 	my $orgCode = '';
 	my %geneUnirefHash = ();
