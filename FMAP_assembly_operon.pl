@@ -10,7 +10,7 @@ GetOptions('h' => \(my $help = ''), 'a' => \(my $all = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
-Usage:   perl FMAP_operon.pl [options] FMAP_assembly_region.txt > FMAP_assembly_operon.txt
+Usage:   perl FMAP_assembly_operon.pl [options] FMAP_assembly.region.txt > FMAP_assembly_operon.txt
 
 Options: -h       display this help message
          -a       print single-gene operons as well
@@ -26,14 +26,17 @@ my %orthologyContigStrandIndexStartEndListHash = ();
 {
 	open(my $reader, "sort --field-separator='\t' -k1,1 -k4,4 -k2,2n -k3,3n $regionFile |");
 	my ($contigStrand, @orthologyStartEndList) = ('');
+	chomp(my $line = <$reader>);
+	my @columnList = split(/\t/, $line);
 	while(my $line = <$reader>) {
 		chomp($line);
-		my ($contig, $start, $end, $strand, $orthology) = split(/\t/, $line);
-		if("$contig\t$strand" ne $contigStrand) {
+		my %tokenHash = ();
+		@tokenHash{@columnList} = split(/\t/, $line);
+		if(join("\t", @tokenHash{'contig', 'strand'}) ne $contigStrand) {
 			addOrthology($contigStrand, @orthologyStartEndList) if($contigStrand ne '');
-			($contigStrand, @orthologyStartEndList) = ("$contig\t$strand");
+			($contigStrand, @orthologyStartEndList) = (join("\t", @tokenHash{'contig', 'strand'}));
 		}
-		push(@orthologyStartEndList, [$orthology, $start, $end]);
+		push(@orthologyStartEndList, [@tokenHash{'orthology', 'start', 'end'}]);
 	}
 	addOrthology($contigStrand, @orthologyStartEndList) if($contigStrand ne '');
 	close($reader);

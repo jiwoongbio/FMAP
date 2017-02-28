@@ -273,10 +273,15 @@ my %contigSequenceLengthHash = ();
 		print "Genome mean depth: $genomeMeanDepth\n";
 	}
 	my @valueColumnList = ('readCount', 'RPKM', 'meanDepth', 'meanDepth/contig', 'meanDepth/genome');
+	{
+		open(my $writer, "> $outputPrefix.region.abundance.txt");
+		print $writer join("\t", 'contig', 'start', 'end', 'strand', 'orthology', map {$_ eq 'RPKM' ? 'RPK' : $_} @valueColumnList), "\n";
+		close($writer);
+	}
 	my $totalReadCount = 0;
 	{
 		open(my $reader, "sort --field-separator='\t' -k1,1 -k11,11g -k12,12gr -k13,13gr $outputPrefix.blast.filtered.txt |");
-		open(my $writer, "| sort --field-separator='\t' -k1,1 -k2,2n -k3,3n -k4 | uniq > $outputPrefix.region.abundance.txt");
+		open(my $writer, "| sort --field-separator='\t' -k5,5 -k1,1 -k2,2n -k3,3n -k4,4r -k6 | uniq >> $outputPrefix.region.abundance.txt");
 		my %topTokenHash = ();
 		$topTokenHash{'qseqid'} = '';
 		while(my $line = <$reader>) {
@@ -295,9 +300,13 @@ my %contigSequenceLengthHash = ();
 				@tokenHash{'readCount', 'baseCount'} = getReadBaseCount("$outputPrefix.sorted.bam", $contig, $start, $end, $strand);
 				my $length = $end - $start + 1;
 				$tokenHash{'RPKM'} = $tokenHash{'readCount'} / ($length / 1000);
-				$tokenHash{'meanDepth'} = $tokenHash{'baseCount'} / $length;
-				$tokenHash{'meanDepth/contig'} = $tokenHash{'meanDepth'} / $contigMeanDepthHash{$contig};
-				$tokenHash{'meanDepth/genome'} = $tokenHash{'meanDepth'} / $genomeMeanDepth;
+				if(($tokenHash{'meanDepth'} = $tokenHash{'baseCount'} / $length) == 0) {
+					$tokenHash{'meanDepth/contig'} = 0;
+					$tokenHash{'meanDepth/genome'} = 0;
+				} else {
+					$tokenHash{'meanDepth/contig'} = $tokenHash{'meanDepth'} / $contigMeanDepthHash{$contig};
+					$tokenHash{'meanDepth/genome'} = $tokenHash{'meanDepth'} / $genomeMeanDepth;
+				}
 				print $writer join("\t", $contig, $start, $end, $strand, @tokenHash{'orthology', @valueColumnList}), "\n";
 				$totalReadCount += $tokenHash{'readCount'};
 			}
@@ -306,7 +315,7 @@ my %contigSequenceLengthHash = ();
 		close($writer);
 	}
 	{
-		open(my $reader, "sort --field-separator='\t' -k5,5 $outputPrefix.region.abundance.txt |");
+		open(my $reader, "$outputPrefix.region.abundance.txt");
 		open(my $writer, "> $outputPrefix.abundance.txt");
 		if($orthologyDefinitionFile ne '') {
 			print $writer join("\t", 'orthology', 'definition', @valueColumnList), "\n";
@@ -315,11 +324,13 @@ my %contigSequenceLengthHash = ();
 		}
 		my %orthologyTokenHash = ();
 		$orthologyTokenHash{'orthology'} = '';
+		chomp(my $line = <$reader>);
+		my @columnList = split(/\t/, $line);
 		while(my $line = <$reader>) {
 			chomp($line);
 			my %tokenHash = ();
-			@tokenHash{'contig', 'start', 'end', 'strand', 'orthology', @valueColumnList} = split(/\t/, $line);
-			$tokenHash{'RPKM'} /= $totalReadCount / 1000000;
+			@tokenHash{@columnList} = split(/\t/, $line);
+			$tokenHash{'RPKM'} = $tokenHash{'RPK'} / ($totalReadCount / 1000000);
 			if($tokenHash{'orthology'} ne $orthologyTokenHash{'orthology'}) {
 				writeOrthologyLine(%orthologyTokenHash) if($orthologyTokenHash{'orthology'} ne '');
 				%orthologyTokenHash = ();
