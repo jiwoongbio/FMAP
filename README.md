@@ -49,7 +49,7 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 
 * **FMAP_database.pl**
   * Process
-![](FMAP_database.process.png)
+    ![](FMAP_database.process.png)
   * Input
     1. [UniRef](http://www.uniprot.org/help/uniref) sequence identity (50, 90, or 100)
     2. (optional) [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy) IDs (numerical)
@@ -80,7 +80,9 @@ Options: -h       display this help message
 
 * **FMAP_assembly.pl**
   * Process
-![](FMAP_assembly.process.png)
+    ![](FMAP_assembly.process.png)
+    * Read mapping: nucleotide sequence alignment using BWA
+    * ORF mapping: protein sequence alignment using DIAMOND
   * Input
     1. Prefix of output files
     2. De novo assembled sequences in FASTA format
