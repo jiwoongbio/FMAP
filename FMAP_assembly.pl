@@ -79,7 +79,7 @@ if($proteinOrthologyFile ne '') {
 }
 
 { # Read mapping
-	system("bwa index -p $outputPrefix $assemblyFastaFile 1>&2");
+	system("bwa index -p $outputPrefix.bwa_index $assemblyFastaFile 1>&2");
 	open(my $writer, "| samtools view -S -b - > $outputPrefix.bam");
 	my $printHeader = 1;
 	foreach my $fastqFile (@fastqFileList) {
@@ -87,14 +87,14 @@ if($proteinOrthologyFile ne '') {
 			my ($fastqFile1, $fastqFile2) = ($1, $2);
 			die "ERROR: '$fastqFile1' is not readable.\n" unless(-r $fastqFile1);
 			die "ERROR: '$fastqFile2' is not readable.\n" unless(-r $fastqFile2);
-			open(my $reader, "bwa mem -t $threads $outputPrefix $fastqFile1 $fastqFile2 |");
+			open(my $reader, "bwa mem -t $threads $outputPrefix.bwa_index $fastqFile1 $fastqFile2 |");
 			while(my $line = <$reader>) {
 				print $writer $line if($line !~ /^\@/ || $printHeader);
 			}
 			close($reader);
 		} else {
 			die "ERROR: '$fastqFile' is not readable.\n" unless(-r $fastqFile);
-			open(my $reader, "bwa mem -t $threads $outputPrefix $fastqFile |");
+			open(my $reader, "bwa mem -t $threads $outputPrefix.bwa_index $fastqFile |");
 			while(my $line = <$reader>) {
 				print $writer $line if($line !~ /^\@/ || $printHeader);
 			}
