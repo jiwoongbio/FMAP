@@ -218,14 +218,14 @@ Options: -h       display this help message
   * Input: output of "FMAP_pathway.pl", "FMAP_module.pl", or "FMAP_operon.pl"
   * Output: PNG format image file of p-value plot
 ```
-Usage:   perl FMAP_plot.pl [options] pathway.txt|module.txt|operon.txt plot.png
+Usage:   perl FMAP_plot.pl [options] pathway.txt|module.txt|operon.txt plot.pdf
 
 Options: -h       display this help message
-         -w INT   plot width [1200]
-         -h INT   plot height [800]
-         -p INT   plot point size [20]
+         -w INT   plot width [12]
+         -h INT   plot height [8]
          -l FLOAT plot left margin [20]
-         -c FLOAT p-value cutoff [0.05]
+         -p FLOAT p-value cutoff [0.05]
+         -c FLOAT coverage cutoff [0 for pathway, 1 for module and operons]
          -d       do not print definition
 ```
 
