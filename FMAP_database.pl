@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -26,8 +26,8 @@ Options: -h       display this help message
 EOF
 }
 my ($unirefIdentity, @taxonIdList) = @ARGV;
-die "ERROR: UniRef identity must be 50|90|100.\n" unless(grep {$unirefIdentity eq $_} split(/\|/, '50|90|100'));
-die "ERROR: Taxon ID must be integer.\n" if(grep {$_ !~ /^[0-9]+$/} @taxonIdList);
+die "ERROR in $0: UniRef identity must be 50|90|100.\n" unless(grep {$unirefIdentity eq $_} split(/\|/, '50|90|100'));
+die "ERROR in $0: Taxon ID must be integer.\n" if(grep {$_ !~ /^[0-9]+$/} @taxonIdList);
 if(@taxonIdList) {
 	@taxonIdList = sort {$a <=> $b} @taxonIdList;
 	@taxonIdList = @taxonIdList[0, grep {$taxonIdList[$_ - 1] != $taxonIdList[$_]} 1 .. $#taxonIdList];
@@ -51,7 +51,7 @@ if(@taxonIdList) {
 		my $URL = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz";
 		my $file = "$dataPath/taxdump.tar.gz";
 		system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
-		die "ERROR: '$file' has zero size.\n" if(-z $file);
+		die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
 		system("cd $dataPath; tar -zxf taxdump.tar.gz nodes.dmp");
 		system("cd $dataPath; tar -zxf taxdump.tar.gz names.dmp");
 		system("rm -f $dataPath/$_") foreach('nodes', 'parents', 'names2id', 'id2names');
@@ -77,7 +77,7 @@ my %unirefOrthologyCountHash = ();
 	my $URL = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping.dat.gz";
 	my $file = "$dataPath/idmapping.dat.gz";
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
-	die "ERROR: '$file' has zero size.\n" if(-z $file);
+	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
 	my %tokenHash = ('UniProtKB-AC' => '');
 	open(my $reader, "gzip -dc $file | sort --field-separator='\t' -k1,1 |");
 	open(my $writer, "| sort --field-separator='\t' -k1,1 -k2,2 -k3,3 | uniq | cut -f2,3 > $dataPath/gene_$prefix.txt");
@@ -154,7 +154,7 @@ my %unirefOrthologyCountHash = ();
 	my $URL = "ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref$unirefIdentity/uniref$unirefIdentity.fasta.gz";
 	my $file = "$dataPath/uniref$unirefIdentity.fasta.gz";
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
-	die "ERROR: '$file' has zero size.\n" if(-z $file);
+	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
 	my $printSequence = 0;
 	open(my $reader, "gzip -dc $file |");
 	open(my $writer, "> $dataPath/orthology_$prefix.fasta");

@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -35,10 +35,10 @@ Options: -h       display this help message
 EOF
 }
 (my $mapper = $mapperPath) =~ s/^.*\///;
-die "ERROR: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
-die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
+die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
+die "ERROR in $0: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
-die "ERROR: The temporary directory is not available.\n" unless(-d $temporaryDirectory && -w $temporaryDirectory);
+die "ERROR in $0: The temporary directory is not available.\n" unless(-d $temporaryDirectory && -w $temporaryDirectory);
 
 my $temporaryOutputPrefix = "$temporaryDirectory/FMAP_mapping";
 $temporaryOutputPrefix = "$temporaryOutputPrefix.$ENV{'HOSTNAME'}" if(defined($ENV{'HOSTNAME'}));
@@ -46,10 +46,10 @@ $temporaryOutputPrefix = "$temporaryOutputPrefix.$$";
 
 my (@inputFileList) = @ARGV;
 if($mapper eq 'diamond') {
-	die "ERROR: The database is not available.\n" unless(-r "$databasePath.dmnd");
+	die "ERROR in $0: The database is not available.\n" unless(-r "$databasePath.dmnd");
 	foreach my $index (0 .. $#inputFileList) {
 		my $inputFile = $inputFileList[$index];
-		print STDERR "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
+		print STDERR "ERROR in $0: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
 		if($multiple) {
 			system("$mapperPath blastx --db $databasePath.dmnd --threads $mappingThreads --query $inputFile --daa $temporaryOutputPrefix.daa --tmpdir $temporaryDirectory --evalue $evalue 1>&2");
 		} else {
@@ -66,9 +66,9 @@ if($mapper eq 'diamond') {
 	}
 }
 if($mapper eq 'usearch') {
-	die "ERROR: The database is not available.\n" unless(-r "$databasePath.udb");
+	die "ERROR in $0: The database is not available.\n" unless(-r "$databasePath.udb");
 	foreach my $inputFile (@inputFileList) {
-		print STDERR "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
+		print STDERR "ERROR in $0: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
 		system("$mapperPath -usearch_global $inputFile -db $databasePath.udb -id $identity -blast6out $temporaryOutputPrefix.b6 -top_hits_only -threads $mappingThreads 1>&2");
 		if(-r "$temporaryOutputPrefix.b6") {
 			open(my $reader, "$temporaryOutputPrefix.b6");

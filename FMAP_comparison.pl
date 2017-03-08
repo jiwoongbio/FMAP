@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Getopt::Long;
 use Statistics::R;
@@ -26,13 +26,13 @@ Options: -h       display this help message
 
 EOF
 }
-die "ERROR: The test is not provided.\n" if(scalar(grep {$test eq $_} @availableTestList) == 0);
+die "ERROR in $0: The test is not provided.\n" if(scalar(grep {$test eq $_} @availableTestList) == 0);
 
 my ($tableFile, @samplesList) = @ARGV;
 my @sampleListList = map {[split(/,/, $_)]} @samplesList;
-die "ERROR: The input \"$tableFile\" is not available.\n" unless(-r $tableFile);
-die "ERROR: Not enough sample groups.\n" unless(scalar(@sampleListList) > 1);
-die "ERROR: The comparison requires at least 3 samples per group.\n" unless(scalar(grep {scalar(@$_) < 3} @sampleListList) == 0);
+die "ERROR in $0: The input \"$tableFile\" is not available.\n" unless(-r $tableFile);
+die "ERROR in $0: Not enough sample groups.\n" unless(scalar(@sampleListList) > 1);
+die "ERROR in $0: The comparison requires at least 3 samples per group.\n" unless(scalar(grep {scalar(@$_) < 3} @sampleListList) == 0);
 
 my $R = Statistics::R->new();
 $R->run("table <- data.frame()");
@@ -103,7 +103,7 @@ my $pvalueList = $R->get("as.numeric(p.value)");
 my $padjustList = $R->get("as.numeric(p.adjust(p.value, method = \"fdr\"))");
 $R->stop();
 
-die "ERROR: R.\n" if(scalar(grep {scalar(@orthologyList) != scalar(@$_)} ($log2foldchangeList, $pvalueList, $padjustList)) > 0);
+die "ERROR in $0: R.\n" if(scalar(grep {scalar(@orthologyList) != scalar(@$_)} ($log2foldchangeList, $pvalueList, $padjustList)) > 0);
 
 if(scalar(keys %orthologyDefinitionHash) > 0) {
 	print join("\t", 'orthology', 'definition', 'log2foldchange', 'p.value', 'p.adjust', 'filter'), "\n";

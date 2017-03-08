@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;

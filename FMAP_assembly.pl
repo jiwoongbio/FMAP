@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -46,18 +46,18 @@ EOF
 my ($outputPrefix, $assemblyFastaFile, @fastqFileList) = @ARGV;
 
 foreach('bwa', 'samtools', 'diamond') {
-	die "ERROR: '$_' is not executable.\n" unless(-x getCommandPath($_));
+	die "ERROR in $0: '$_' is not executable.\n" unless(-x getCommandPath($_));
 }
 foreach($assemblyFastaFile, "$databasePrefix.dmnd", "$databasePrefix.length.txt") {
-	die "ERROR: '$_' is not readable.\n" unless(-r $_);
+	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my $outputDirectory = ($outputPrefix =~ /^(.*\/)/) ? $1 : '.';
 foreach($outputDirectory, $temporaryDirectory) {
-	die "ERROR: '$_' is not a writable directory.\n" unless(-d $_ && -w $_);
+	die "ERROR in $0: '$_' is not a writable directory.\n" unless(-d $_ && -w $_);
 }
 
 $orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($databasePrefix eq "$fmapPath/FMAP_data/$database" && $orthologyDefinitionFile eq '');
-die "ERROR: '$orthologyDefinitionFile' is not readable.\n" unless(-r $orthologyDefinitionFile);
+die "ERROR in $0: '$orthologyDefinitionFile' is not readable.\n" unless(-r $orthologyDefinitionFile);
 
 my %orthologyDefinitionHash = ();
 if($orthologyDefinitionFile ne '') {
@@ -87,15 +87,15 @@ if($proteinOrthologyFile ne '') {
 	foreach my $fastqFile (@fastqFileList) {
 		if($fastqFile =~ /^(.+),(.+)$/) {
 			my ($fastqFile1, $fastqFile2) = ($1, $2);
-			die "ERROR: '$fastqFile1' is not readable.\n" unless(-r $fastqFile1);
-			die "ERROR: '$fastqFile2' is not readable.\n" unless(-r $fastqFile2);
+			die "ERROR in $0: '$fastqFile1' is not readable.\n" unless(-r $fastqFile1);
+			die "ERROR in $0: '$fastqFile2' is not readable.\n" unless(-r $fastqFile2);
 			open(my $reader, "bwa mem -t $threads $outputPrefix.bwa_index $fastqFile1 $fastqFile2 |");
 			while(my $line = <$reader>) {
 				print $writer $line if($line !~ /^\@/ || $printHeader);
 			}
 			close($reader);
 		} else {
-			die "ERROR: '$fastqFile' is not readable.\n" unless(-r $fastqFile);
+			die "ERROR in $0: '$fastqFile' is not readable.\n" unless(-r $fastqFile);
 			open(my $reader, "bwa mem -t $threads $outputPrefix.bwa_index $fastqFile |");
 			while(my $line = <$reader>) {
 				print $writer $line if($line !~ /^\@/ || $printHeader);
@@ -114,7 +114,7 @@ if(-r "$outputPrefix.sorted.bam" and -r "$outputPrefix.sorted.bam.bai") {
 	my $mappingReadRatio = $mappingReadCount / $readCount;
 	print "Mapping: $mappingReadCount / $readCount ($mappingReadRatio)\n";
 } else {
-	die "ERROR: Read mapping failed.\n";
+	die "ERROR in $0: Read mapping failed.\n";
 }
 
 my %contigSequenceLengthHash = ();

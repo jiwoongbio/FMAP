@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Getopt::Long;
 use List::Util qw(sum);
@@ -39,13 +39,13 @@ my %orthologyAbundanceListHash = ();
 my @abundanceSumList = ();
 foreach my $index (0 .. $#sampleFileList) {
 	my $sampleFile = $sampleFileList[$index];
-	die "ERROR: '$sampleFile' is not readable.\n" unless(-r $sampleFile);
+	die "ERROR in $0: '$sampleFile' is not readable.\n" unless(-r $sampleFile);
 	open(my $reader, $sampleFile);
 	chomp(my $line = <$reader>);
 	my @columnList = split(/\t/, $line);
 	my %columnHash = map {$_ => 1} @columnList;
 	($column) = grep {$columnHash{$_}} split(/\|/, $column);
-	die "ERROR: '$column' is not a column.\n" unless(defined($column));
+	die "ERROR in $0: '$column' is not a column.\n" unless(defined($column));
 	while(my $line = <$reader>) {
 		chomp($line);
 		my %tokenHash = ();

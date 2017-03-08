@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -22,7 +22,7 @@ EOF
 
 my ($inputFile) = @ARGV;
 foreach($inputFile, "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt", "$fmapPath/FMAP_data/KEGG_pathway.txt") {
-	die "ERROR: '$_' is not readable.\n" unless(-r $_);
+	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my %targetOrthologyColorHash = ();
 {

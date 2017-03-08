@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -23,7 +23,7 @@ EOF
 }
 
 my ($inputFile) = @ARGV;
-die "ERROR: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
+die "ERROR in $0: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
 my %orthologyFoldchangeHash = ();
 my %orthologyFilterHash = ();
 {

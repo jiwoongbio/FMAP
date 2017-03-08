@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -29,9 +29,9 @@ Options: -h       display this help message
 EOF
 }
 (my $mapper = $mapperPath) =~ s/^.*\///;
-die "ERROR: 'wget' is not executable.\n" unless(-x getCommandPath('wget'));
-die "ERROR: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
-die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
+die "ERROR in $0: 'wget' is not executable.\n" unless(-x getCommandPath('wget'));
+die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
+die "ERROR in $0: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
 # Database
 my ($database, $databasePath) = ('', '');
@@ -54,7 +54,7 @@ if(-r "$databasePath.fasta") {
 		system("$mapperPath -makeudb_usearch $databasePath.fasta -output $databasePath.udb 1>&2");
 	}
 } else {
-	die "ERROR: The database is not available.\n";
+	die "ERROR in $0: The database is not available.\n";
 }
 
 # KEGG

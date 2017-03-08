@@ -1,7 +1,7 @@
 # Author: Jiwoong Kim (jiwoongbio@gmail.com)
 use strict;
 use warnings;
-local $SIG{__WARN__} = sub { die $_[0] };
+local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -35,13 +35,13 @@ Options: -h       display this help message
 EOF
 }
 (my $mapper = $mapperPath) =~ s/^.*\///;
-die "ERROR: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
-die "ERROR: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
+die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
+die "ERROR in $0: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
-die "ERROR: The test is not provided.\n" if(scalar(grep {$test eq $_} ('kruskal', 'anova', 'poisson', 'quasipoisson')) == 0);
+die "ERROR in $0: The test is not provided.\n" if(scalar(grep {$test eq $_} ('kruskal', 'anova', 'poisson', 'quasipoisson')) == 0);
 
 my ($configFile, $outputPrefix) = @ARGV;
-die "ERROR: The configuration file is not available.\n" if(not -r $configFile);
+die "ERROR in $0: The configuration file is not available.\n" if(not -r $configFile);
 $outputPrefix = 'FMAP_output' unless(defined($outputPrefix));
 
 my %sampleInputFileListHash = ();
