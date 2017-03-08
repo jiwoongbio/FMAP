@@ -12,6 +12,7 @@ my $dataPath = "$fmapPath/FMAP_data";
 system("mkdir -p $dataPath");
 
 GetOptions('h' => \(my $help = ''),
+	's' => \(my $switchDatabase = ''),
 	'r' => \(my $redownload = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
@@ -19,12 +20,30 @@ if($help || scalar(@ARGV) == 0) {
 Usage:   perl FMAP_database.pl [options] 50|90|100 [NCBI_TaxID [...]]
 
 Options: -h       display this help message
+         -s       switch database
          -r       redownload data
 
 EOF
 }
 my ($unirefIdentity, @taxonIdList) = @ARGV;
-my $prefix = join('.', join('_', "uniref$unirefIdentity", @taxonIdList), getTimeString());
+die "ERROR: UniRef identity must be 50|90|100.\n" unless(grep {$unirefIdentity eq $_} split(/\|/, '50|90|100'));
+die "ERROR: Taxon ID must be integer.\n" if(grep {$_ !~ /^[0-9]+$/} @taxonIdList);
+if(@taxonIdList) {
+	@taxonIdList = sort {$a <=> $b} @taxonIdList;
+	@taxonIdList = @taxonIdList[0, grep {$taxonIdList[$_ - 1] != $taxonIdList[$_]} 1 .. $#taxonIdList];
+}
+my $prefix = join('_', "uniref$unirefIdentity", @taxonIdList);
+if($switchDatabase) {
+	chomp(my @databaseList = `ls $dataPath/orthology_$prefix.*.fasta`);
+	if(@databaseList) {
+		s/^.*\/// foreach(@databaseList);
+		s/\.fasta$// foreach(@databaseList);
+		@databaseList = sort @databaseList;
+		switchDatabase($databaseList[-1]);
+		exit 0;
+	}
+}
+$prefix = join('.', $prefix, getTimeString());
 
 my %taxonIdHash = ();
 if(@taxonIdList) {
@@ -161,13 +180,17 @@ my %unirefOrthologyCountHash = ();
 	close($writer);
 	close($writerFail);
 }
-{
-	open(my $writer, "> $dataPath/database");
-	print $writer "orthology_$prefix\n";
-	close($writer);
-}
+switchDatabase("orthology_$prefix");
 
 sub getTimeString {
 	my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
 	return sprintf('%04d%02d%02d%02d%02d%02d', $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
+}
+
+sub switchDatabase {
+	my ($database) = @_;
+	open(my $writer, "> $dataPath/database");
+	print $writer "$database\n";
+	close($writer);
+	print "The default database is switched to $database.\n";
 }

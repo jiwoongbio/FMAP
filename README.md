@@ -52,7 +52,7 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
     ![](FMAP_database.process.png)
   * Input
     1. [UniRef](http://www.uniprot.org/help/uniref) sequence identity (50, 90, or 100)
-    2. (optional) [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy) IDs (numerical)
+    2. (optional) [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy) IDs (integer)
   * Require [Bio::DB::Taxonomy](http://search.cpan.org/dist/BioPerl/Bio/DB/Taxonomy.pm).
   * The following data files will be downloaded through FTP connection. If you have a problem in the FTP connection, please download the files through another method and copy them into "FMAP_data" directory before executing "FMAP_database.pl" command.  
     ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz  
@@ -65,6 +65,7 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 Usage:   perl FMAP_database.pl [options] 50|90|100 [NCBI_TaxID [...]]
 
 Options: -h       display this help message
+         -s       switch database
          -r       redownload data
 ```
 
