@@ -63,14 +63,14 @@ if(scalar(keys %orthologyDefinitionHash) > 0) {
 	print join("\t", 'orthology', 'definition', @sampleNameList), "\n";
 	foreach my $orthology (sort keys %orthologyHash) {
 		my $definition = defined($_ = $orthologyDefinitionHash{$orthology}) ? $_ : '';
-		my @abundanceList = map {defined($_) ? $_ : 0} @{$orthologyAbundanceListHash{$orthology}};
+		my @abundanceList = map {defined($_) ? $_ : 0} @{$orthologyAbundanceListHash{$orthology}}[0 .. $#sampleNameList];
 		@abundanceList = map {$abundanceList[$_] / $abundanceSumList[$_]} 0 .. $#abundanceList if($fraction);
 		print join("\t", $orthology, $definition, @abundanceList), "\n";
 	}
 } else {
 	print join("\t", 'orthology', @sampleNameList), "\n";
 	foreach my $orthology (sort keys %orthologyHash) {
-		my @abundanceList = map {defined($_) ? $_ : 0} @{$orthologyAbundanceListHash{$orthology}};
+		my @abundanceList = map {defined($_) ? $_ : 0} @{$orthologyAbundanceListHash{$orthology}}[0 .. $#sampleNameList];
 		@abundanceList = map {$abundanceList[$_] / $abundanceSumList[$_]} 0 .. $#abundanceList if($fraction);
 		print join("\t", $orthology, @abundanceList), "\n";
 	}
