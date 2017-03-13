@@ -97,13 +97,13 @@ my %unirefOrthologyCountHash = ();
 	sub printGeneUniref {
 		my ($taxonIdList, $geneList, $unirefList) = @tokenHash{'NCBI_TaxID', 'KEGG', "UniRef$unirefIdentity"};
 		if(scalar(keys %taxonIdHash) == 0 || (defined($taxonIdList) && grep {defined($taxonIdHash{$_})} @$taxonIdList)) {
-			if(defined($geneList) && defined($unirefList)) {
+			if(defined($unirefList) && defined($geneList)) {
 				print $writer join("\t", $_->[1], $_->[0], join(',', @$unirefList)), "\n" foreach(map {[$_, split(/:/, $_)]} @$geneList);
 			}
-		}
-		if(defined($unirefList) && defined(my $orthologyList = $uniprotOrthologyListHash{$tokenHash{'UniProtKB-AC'}})) {
-			if(scalar(@$unirefList) == 1 && scalar(@$orthologyList) == 1) {
-				$unirefOrthologyCountHash{$unirefList->[0]}->{$orthologyList->[0]} += 1;
+			if(defined($unirefList) && defined(my $orthologyList = $uniprotOrthologyListHash{$tokenHash{'UniProtKB-AC'}})) {
+				if(scalar(@$unirefList) == 1 && scalar(@$orthologyList) == 1) {
+					$unirefOrthologyCountHash{$unirefList->[0]}->{$orthologyList->[0]} += 1;
+				}
 			}
 		}
 	}
