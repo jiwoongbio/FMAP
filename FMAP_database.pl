@@ -192,5 +192,18 @@ sub switchDatabase {
 	open(my $writer, "> $dataPath/database");
 	print $writer "$database\n";
 	close($writer);
-	print "The default database is switched to $database.\n";
+	my $sequenceCount = 0;
+	my %orthologyHash = ();
+	open(my $reader, "$dataPath/$database.fasta");
+	while(my $line = <$reader>) {
+		chomp($line);
+		if($line =~ s/^>//) {
+			$sequenceCount += 1;
+			(my $orthology = $line) =~ s/_UniRef.*$//;
+			$orthologyHash{$orthology} = 1;
+		}
+	}
+	close($reader);
+	my $orthologyCount = scalar(keys %orthologyHash);
+	print "The default database is switched to $database containing $sequenceCount UniRef sequences covering $orthologyCount KEGG orthologies.\n";
 }
