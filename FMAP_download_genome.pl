@@ -4,7 +4,6 @@ use warnings;
 local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Getopt::Long qw(:config no_ignore_case);
-use URI::Escape;
 use XML::LibXML;
 
 GetOptions('h' => \(my $help = ''));
