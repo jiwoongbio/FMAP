@@ -26,7 +26,7 @@ if(@taxonIdList) {
 my $baseURL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 foreach my $taxonId (@taxonIdList){
 	my %paramHash = ('db' => 'nuccore', 'usehistory' => 'y', 'retmax' => 500, 'rettype' => 'fasta', 'retmode' => 'text');
-	$paramHash{'term'} = uri_escape(sprintf('txid%d[Organism:exp] AND nucleotide_genome[Filter] AND RefSeq[Filter]', $taxonId));
+	$paramHash{'term'} = sprintf('txid%d[Organism:exp] AND nucleotide_genome[Filter] AND RefSeq[Filter]', $taxonId);
 	{
 		my $queryString = join('&', map {"$_=$paramHash{$_}"} 'db', 'term', 'usehistory');
 		my $xmlString = `wget --no-verbose -O - '$baseURL/esearch.fcgi?$queryString'`;
