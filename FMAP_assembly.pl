@@ -4,7 +4,7 @@ use warnings;
 local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
-use Getopt::Long;
+use Getopt::Long qw(:config no_ignore_case);
 use List::Util qw(max);
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
@@ -13,13 +13,15 @@ my $databasePrefix = "$fmapPath/FMAP_data/$database";
 my @codonList = ();
 
 GetOptions('h' => \(my $help = ''),
+	'a=s' => \(my $assemblyPrefix = ''),
+	'b=s' => \(my $bamInput = ''),
 	'p=i' => \(my $threads = 1),
 	'e=f' => \(my $evalue = 10),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
-	'c=s' => \@codonList,
-	's=s' => \(my $startCodons = 'GTG,ATG,CTG,TTG,ATA,ATC,ATT'),
+	'C=s' => \@codonList,
+	'S=s' => \(my $startCodons = 'GTG,ATG,CTG,TTG,ATA,ATC,ATT'),
 	'l=i' => \(my $minimumTranslationLength = 10),
-	'm=f' => \(my $minimumCoverage = 0.8),
+	'c=f' => \(my $minimumCoverage = 0.8),
 	'q=i' => \(my $minimumMappingQuality = 0),
 	's=s' => \(my $stranded = ''),
 	'orthology2definition=s' => \(my $orthologyDefinitionFile = ''),
@@ -28,22 +30,33 @@ GetOptions('h' => \(my $help = ''),
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
-Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta input1.fastq|input1.R1.fastq,input1.R2.fastq [input2.fastq|input2.R1.fastq,input2.R2.fastq [...]] > summary.txt
+Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]]] > summary.txt
 
 Options: -h       display this help message
+         -a STR   prepared assembly prefix
+         -b       input indexed sorted BAM file instead of FASTQ file
          -p INT   number of threads [$threads]
          -e FLOAT maximum e-value to report alignments for "diamond" [$evalue]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
-         -c STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
-         -s STR   start codons [$startCodons]
+         -C STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
+         -S STR   start codons [$startCodons]
          -l INT   minimum translation length [$minimumTranslationLength]
-         -m FLOAT minimum coverage [$minimumCoverage]
+         -c FLOAT minimum coverage [$minimumCoverage]
          -q INT   minimum mapping quality [$minimumMappingQuality]
          -s STR   strand specificity, "f" or "r"
 
 EOF
 }
-my ($outputPrefix, $assemblyFastaFile, @fastqFileList) = @ARGV;
+my ($outputPrefix, $assemblyFastaFile, @inputFileList) = @ARGV;
+my $assemblyNotPrepared = '';
+if($assemblyPrefix eq '') {
+	$assemblyNotPrepared = 1;
+	$assemblyPrefix = $outputPrefix;
+} else {
+	chomp(my @fileList = `ls $assemblyPrefix.bwa_index.*`);
+	die "ERROR in $0: '$assemblyPrefix.bwa_index' is not available.\n" unless(@fileList);
+	die "ERROR in $0: '$assemblyPrefix.region.txt' is not readable.\n" unless(-r "$assemblyPrefix.region.txt");
+}
 
 foreach('bwa', 'samtools', 'diamond') {
 	die "ERROR in $0: '$_' is not executable.\n" unless(-x getCommandPath($_));
@@ -80,45 +93,61 @@ if($proteinOrthologyFile ne '') {
 	close($reader);
 }
 
-{ # Read mapping
-	system("bwa index -p $outputPrefix.bwa_index $assemblyFastaFile 1>&2");
-	open(my $writer, "| samtools view -S -b - > $outputPrefix.bam");
-	my $printHeader = 1;
-	foreach my $fastqFile (@fastqFileList) {
-		if($fastqFile =~ /^(.+),(.+)$/) {
-			my ($fastqFile1, $fastqFile2) = ($1, $2);
-			die "ERROR in $0: '$fastqFile1' is not readable.\n" unless(-r $fastqFile1);
-			die "ERROR in $0: '$fastqFile2' is not readable.\n" unless(-r $fastqFile2);
-			open(my $reader, "bwa mem -t $threads $outputPrefix.bwa_index $fastqFile1 $fastqFile2 |");
-			while(my $line = <$reader>) {
-				print $writer $line if($line !~ /^\@/ || $printHeader);
-			}
-			close($reader);
-		} else {
-			die "ERROR in $0: '$fastqFile' is not readable.\n" unless(-r $fastqFile);
-			open(my $reader, "bwa mem -t $threads $outputPrefix.bwa_index $fastqFile |");
-			while(my $line = <$reader>) {
-				print $writer $line if($line !~ /^\@/ || $printHeader);
-			}
-			close($reader);
-		}
-		$printHeader = '';
-	}
-	close($writer);
-	system("samtools sort $outputPrefix.bam $outputPrefix.sorted") if(-r "$outputPrefix.bam");
-	system("samtools index $outputPrefix.sorted.bam") if(-r "$outputPrefix.sorted.bam");
-}
-if(-r "$outputPrefix.sorted.bam" and -r "$outputPrefix.sorted.bam.bai") {
-	chomp(my $readCount = `samtools view -c -F 2048 -q $minimumMappingQuality $outputPrefix.sorted.bam`);
-	chomp(my $mappingReadCount = `samtools view -c -F 2052 -q $minimumMappingQuality $outputPrefix.sorted.bam`);
-	my $mappingReadRatio = $mappingReadCount / $readCount;
-	print "Mapping: $mappingReadCount / $readCount ($mappingReadRatio)\n";
-} else {
-	die "ERROR in $0: Read mapping failed.\n";
+if($assemblyNotPrepared) { # BWA index
+	system("bwa index -p $assemblyPrefix.bwa_index $assemblyFastaFile 1>&2");
 }
 
-my %contigSequenceLengthHash = ();
-{ # ORF translation
+my @bamFileList = ();
+if(@inputFileList) { # Read mapping
+	if($bamInput) {
+		push(@bamFileList, @inputFileList);
+	} else {
+		open(my $writer, "| samtools view -S -b - > $outputPrefix.bam");
+		my $printHeader = 1;
+		foreach my $fastqFile (@inputFileList) {
+			if($fastqFile =~ /^(.+),(.+)$/) {
+				my ($fastqFile1, $fastqFile2) = ($1, $2);
+				die "ERROR in $0: '$fastqFile1' is not readable.\n" unless(-r $fastqFile1);
+				die "ERROR in $0: '$fastqFile2' is not readable.\n" unless(-r $fastqFile2);
+				open(my $reader, "bwa mem -t $threads $assemblyPrefix.bwa_index $fastqFile1 $fastqFile2 |");
+				while(my $line = <$reader>) {
+					print $writer $line if($line !~ /^\@/ || $printHeader);
+				}
+				close($reader);
+			} else {
+				die "ERROR in $0: '$fastqFile' is not readable.\n" unless(-r $fastqFile);
+				open(my $reader, "bwa mem -t $threads $assemblyPrefix.bwa_index $fastqFile |");
+				while(my $line = <$reader>) {
+					print $writer $line if($line !~ /^\@/ || $printHeader);
+				}
+				close($reader);
+			}
+			$printHeader = '';
+		}
+		close($writer);
+		if(-r "$outputPrefix.bam") {
+			my $samtoolsVersion = getSamtoolsVersion();
+			if($samtoolsVersion =~ /^0\./) {
+				system("samtools sort $outputPrefix.bam $outputPrefix.sorted");
+			}
+			if($samtoolsVersion =~ /^1\./) {
+				system("samtools sort -o $outputPrefix.sorted.bam $outputPrefix.bam");
+			}
+		}
+		system("samtools index $outputPrefix.sorted.bam") if(-r "$outputPrefix.sorted.bam");
+		if(-r "$outputPrefix.sorted.bam" and -r "$outputPrefix.sorted.bam.bai") {
+			chomp(my $readCount = `samtools view -c -F 2048 -q $minimumMappingQuality $outputPrefix.sorted.bam`);
+			chomp(my $mappingReadCount = `samtools view -c -F 2052 -q $minimumMappingQuality $outputPrefix.sorted.bam`);
+			my $mappingReadRatio = $mappingReadCount / $readCount;
+			print "Mapping: $mappingReadCount / $readCount ($mappingReadRatio)\n";
+			push(@bamFileList, "$outputPrefix.sorted.bam");
+		} else {
+			die "ERROR in $0: Read mapping failed.\n";
+		}
+	}
+}
+
+if($assemblyNotPrepared) { # ORF translation
 	my %codonHash = (
 		'TTT' => 'F', 'CTT' => 'L', 'ATT' => 'I', 'GTT' => 'V',
 		'TTC' => 'F', 'CTC' => 'L', 'ATC' => 'I', 'GTC' => 'V',
@@ -153,24 +182,18 @@ my %contigSequenceLengthHash = ();
 	);
 	my $minimumLength = $minimumTranslationLength * 3;
 	open(my $reader, $assemblyFastaFile);
-	open(my $writer, "> $outputPrefix.translation.fasta");
+	open(my $writer, "> $assemblyPrefix.translation.fasta");
 	my ($contig, $sequence) = ('', '');
 	while(my $line = <$reader>) {
 		chomp($line);
-		if($line =~ /^>(\S*)$/) {
-			if($contig ne '' && $sequence ne '') {
-				writeTranslationSequences($contig, $sequence);
-				$contigSequenceLengthHash{$contig} = length($sequence);
-			}
+		if($line =~ /^>(\S*)/) {
+			writeTranslationSequences($contig, $sequence) if($contig ne '' && $sequence ne '');
 			($contig, $sequence) = ($1, '');
 		} else {
 			$sequence .= $line;
 		}
 	}
-	if($contig ne '' && $sequence ne '') {
-		writeTranslationSequences($contig, $sequence);
-		$contigSequenceLengthHash{$contig} = length($sequence);
-	}
+	writeTranslationSequences($contig, $sequence) if($contig ne '' && $sequence ne '');
 	close($reader);
 	close($writer);
 
@@ -217,8 +240,8 @@ my %contigSequenceLengthHash = ();
 	}
 }
 
-{ # ORF translation mapping
-	system("diamond blastp --threads $threads --db $databasePrefix.dmnd --query $outputPrefix.translation.fasta --out $outputPrefix.blast.txt --outfmt 6 --sensitive --evalue $evalue --tmpdir $temporaryDirectory 1>&2");
+if($assemblyNotPrepared) { # ORF translation mapping
+	system("diamond blastp --threads $threads --db $databasePrefix.dmnd --query $assemblyPrefix.translation.fasta --out $assemblyPrefix.blast.txt --outfmt 6 --sensitive --evalue $evalue --tmpdir $temporaryDirectory 1>&2");
 
 	my %proteinSequenceLengthHash = ();
 	{
@@ -231,8 +254,8 @@ my %contigSequenceLengthHash = ();
 		close($reader);
 	}
 	{
-		open(my $reader, "$outputPrefix.blast.txt");
-		open(my $writer, "> $outputPrefix.blast.filtered.txt");
+		open(my $reader, "$assemblyPrefix.blast.txt");
+		open(my $writer, "> $assemblyPrefix.blast.filtered.txt");
 		while(my $line = <$reader>) {
 			chomp($line);
 			my %tokenHash = ();
@@ -243,24 +266,69 @@ my %contigSequenceLengthHash = ();
 		close($reader);
 		close($writer);
 	}
-}
-
-{ # Abundance estimation
-	my %contigMeanDepthHash = ();
-	my $genomeMeanDepth = 0;
 	{
-		open(my $reader, "samtools view -F 2052 -q $minimumMappingQuality $outputPrefix.sorted.bam |");
+		open(my $writer, "> $assemblyPrefix.region.txt");
+		print $writer join("\t", 'contig', 'start', 'end', 'strand', 'orthology'), "\n";
+		close($writer);
+	}
+	{
+		open(my $reader, "sort --field-separator='\t' -k1,1 -k11,11g -k12,12gr -k13,13gr $assemblyPrefix.blast.filtered.txt |");
+		open(my $writer, "| sort --field-separator='\t' -k1,1 -k2,2n -k3,3n -k4,4r -k5,5 | uniq >> $assemblyPrefix.region.txt");
+		my %topTokenHash = ();
+		$topTokenHash{'qseqid'} = '';
 		while(my $line = <$reader>) {
 			chomp($line);
 			my %tokenHash = ();
-			@tokenHash{'qname', 'flag', 'rname', 'pos', 'mapq', 'cigar', 'rnext', 'pnext', 'tlen', 'seq', 'qual'} = split(/\t/, $line);
-			my @positionList = getPositionList(@tokenHash{'pos', 'cigar'});
-			if(@positionList = grep {defined} @positionList) {
-				$contigMeanDepthHash{$tokenHash{'rname'}} += scalar(@positionList);
-				$genomeMeanDepth += scalar(@positionList);
+			@tokenHash{qw(qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore), 'coverage'} = split(/\t/, $line);
+			%topTokenHash = %tokenHash if($tokenHash{'qseqid'} ne $topTokenHash{'qseqid'});
+			if(scalar(grep {$tokenHash{$_} != $topTokenHash{$_}} 'evalue', 'bitscore', 'coverage') == 0) {
+				(@tokenHash{'contig', 'start', 'end', 'strand'}, my @startList) = split(/\|/, $tokenHash{'qseqid'});
+				if($tokenHash{'qstart'} > 1) {
+					my $startIndex = max(grep {$_ <= $tokenHash{'qstart'}} @startList) - 1;
+					$tokenHash{'start'} += $startIndex * 3 if($tokenHash{'strand'} eq '+');
+					$tokenHash{'end'}   -= $startIndex * 3 if($tokenHash{'strand'} eq '-');
+				}
+				$tokenHash{'orthology'} = getOrthology($tokenHash{'sseqid'});
+				print $writer join("\t", @tokenHash{'contig', 'start', 'end', 'strand', 'orthology'}), "\n";
 			}
 		}
 		close($reader);
+		close($writer);
+	}
+}
+
+if(@bamFileList) { # Abundance estimation
+	my %contigSequenceLengthHash = ();
+	{
+		open(my $reader, $assemblyFastaFile);
+		my $contig = '';
+		while(my $line = <$reader>) {
+			chomp($line);
+			if($line =~ /^>(\S*)/) {
+				$contig = $1;
+			} else {
+				$contigSequenceLengthHash{$contig} += length($line);
+			}
+		}
+		close($reader);
+	}
+	my %contigMeanDepthHash = ();
+	my $genomeMeanDepth = 0;
+	{
+		foreach my $bamFile (@bamFileList) {
+			open(my $reader, "samtools view -F 2052 -q $minimumMappingQuality $bamFile |");
+			while(my $line = <$reader>) {
+				chomp($line);
+				my %tokenHash = ();
+				@tokenHash{'qname', 'flag', 'rname', 'pos', 'mapq', 'cigar', 'rnext', 'pnext', 'tlen', 'seq', 'qual'} = split(/\t/, $line);
+				my @positionList = getPositionList(@tokenHash{'pos', 'cigar'});
+				if(@positionList = grep {defined} @positionList) {
+					$contigMeanDepthHash{$tokenHash{'rname'}} += scalar(@positionList);
+					$genomeMeanDepth += scalar(@positionList);
+				}
+			}
+			close($reader);
+		}
 		my $genomeSequenceLength = 0;
 		foreach my $contig (keys %contigSequenceLengthHash) {
 			my $contigSequenceLength = $contigSequenceLengthHash{$contig};
@@ -275,85 +343,63 @@ my %contigSequenceLengthHash = ();
 		print "Genome mean depth: $genomeMeanDepth\n";
 	}
 	my @valueColumnList = ('readCount', 'RPKM', 'meanDepth', 'meanDepth/contig', 'meanDepth/genome');
+	my %orthologyTokenHashHash = ();
 	{
-		open(my $writer, "> $outputPrefix.region.abundance.txt");
-		print $writer join("\t", 'contig', 'start', 'end', 'strand', 'orthology', map {$_ eq 'RPKM' ? 'RPK' : $_} @valueColumnList), "\n";
-		close($writer);
-	}
-	my $totalReadCount = 0;
-	{
-		open(my $reader, "sort --field-separator='\t' -k1,1 -k11,11g -k12,12gr -k13,13gr $outputPrefix.blast.filtered.txt |");
-		open(my $writer, "| sort --field-separator='\t' -k5,5 -k1,1 -k2,2n -k3,3n -k4,4r -k6 | uniq >> $outputPrefix.region.abundance.txt");
-		my %topTokenHash = ();
-		$topTokenHash{'qseqid'} = '';
-		while(my $line = <$reader>) {
-			chomp($line);
-			my %tokenHash = ();
-			@tokenHash{qw(qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore), 'coverage'} = split(/\t/, $line);
-			%topTokenHash = %tokenHash if($tokenHash{'qseqid'} ne $topTokenHash{'qseqid'});
-			if(scalar(grep {$tokenHash{$_} != $topTokenHash{$_}} 'evalue', 'bitscore', 'coverage') == 0) {
-				my ($contig, $start, $end, $strand, @startList) = split(/\|/, $tokenHash{'qseqid'});
-				if($tokenHash{'qstart'} > 1) {
-					my $startIndex = max(grep {$_ <= $tokenHash{'qstart'}} @startList) - 1;
-					$start += $startIndex * 3 if($strand eq '+');
-					$end   -= $startIndex * 3 if($strand eq '-');
-				}
-				$tokenHash{'orthology'} = getOrthology($tokenHash{'sseqid'});
-				@tokenHash{'readCount', 'baseCount'} = getReadBaseCount("$outputPrefix.sorted.bam", $contig, $start, $end, $strand);
-				my $length = $end - $start + 1;
-				$tokenHash{'RPKM'} = $tokenHash{'readCount'} / ($length / 1000);
-				if(($tokenHash{'meanDepth'} = $tokenHash{'baseCount'} / $length) == 0) {
-					$tokenHash{'meanDepth/contig'} = 0;
-					$tokenHash{'meanDepth/genome'} = 0;
-				} else {
-					$tokenHash{'meanDepth/contig'} = $tokenHash{'meanDepth'} / $contigMeanDepthHash{$contig};
-					$tokenHash{'meanDepth/genome'} = $tokenHash{'meanDepth'} / $genomeMeanDepth;
-				}
-				print $writer join("\t", $contig, $start, $end, $strand, @tokenHash{'orthology', @valueColumnList}), "\n";
-				$totalReadCount += $tokenHash{'readCount'};
-			}
-		}
-		close($reader);
-		close($writer);
-	}
-	{
-		open(my $reader, "$outputPrefix.region.abundance.txt");
-		open(my $writer, "> $outputPrefix.abundance.txt");
-		if($orthologyDefinitionFile ne '') {
-			print $writer join("\t", 'orthology', 'definition', @valueColumnList), "\n";
-		} else {
-			print $writer join("\t", 'orthology', @valueColumnList), "\n";
-		}
-		my %orthologyTokenHash = ();
-		$orthologyTokenHash{'orthology'} = '';
+		my @tokenHashList = ();
+		my $totalReadCount = 0;
+		open(my $reader, "$assemblyPrefix.region.txt");
 		chomp(my $line = <$reader>);
 		my @columnList = split(/\t/, $line);
 		while(my $line = <$reader>) {
 			chomp($line);
 			my %tokenHash = ();
 			@tokenHash{@columnList} = split(/\t/, $line);
-			$tokenHash{'RPKM'} = $tokenHash{'RPK'} / ($totalReadCount / 1000000);
-			if($tokenHash{'orthology'} ne $orthologyTokenHash{'orthology'}) {
-				writeOrthologyLine(%orthologyTokenHash) if($orthologyTokenHash{'orthology'} ne '');
-				%orthologyTokenHash = ();
-				$orthologyTokenHash{'orthology'} = $tokenHash{'orthology'};
+			foreach my $bamFile (@bamFileList) {
+				my ($readCount, $baseCount) = getReadBaseCount($bamFile, @tokenHash{'contig', 'start', 'end', 'strand'});
+				$tokenHash{'readCount'} += $readCount;
+				$tokenHash{'baseCount'} += $baseCount;
 			}
-			$orthologyTokenHash{$_} += $tokenHash{$_} foreach(@valueColumnList);
-		}
-		writeOrthologyLine(%orthologyTokenHash) if($orthologyTokenHash{'orthology'} ne '');
-		close($reader);
-		close($writer);
-
-		sub writeOrthologyLine {
-			my (%orthologyTokenHash) = @_;
-			if($orthologyDefinitionFile ne '') {
-				$orthologyTokenHash{'definition'} = $orthologyDefinitionHash{$orthologyTokenHash{'orthology'}};
-				$orthologyTokenHash{'definition'} = '' unless(defined($orthologyTokenHash{'definition'}));
-				print $writer join("\t", @orthologyTokenHash{'orthology', 'definition', @valueColumnList}), "\n";
+			$tokenHash{'length'} = $tokenHash{'end'} - $tokenHash{'start'} + 1;
+			$tokenHash{'RPK'} = $tokenHash{'readCount'} / ($tokenHash{'length'} / 1000);
+			if(($tokenHash{'meanDepth'} = $tokenHash{'baseCount'} / $tokenHash{'length'}) == 0) {
+				$tokenHash{'meanDepth/contig'} = 0;
+				$tokenHash{'meanDepth/genome'} = 0;
 			} else {
-				print $writer join("\t", @orthologyTokenHash{'orthology', @valueColumnList}), "\n";
+				$tokenHash{'meanDepth/contig'} = $tokenHash{'meanDepth'} / $contigMeanDepthHash{$tokenHash{'contig'}};
+				$tokenHash{'meanDepth/genome'} = $tokenHash{'meanDepth'} / $genomeMeanDepth;
+			}
+			push(@tokenHashList, \%tokenHash);
+			$totalReadCount += $tokenHash{'readCount'};
+		}
+		close($reader);
+		open(my $writer, "> $outputPrefix.region.abundance.txt");
+		print $writer join("\t", @columnList, @valueColumnList), "\n";
+		foreach(@tokenHashList) {
+			my %tokenHash = %$_;
+			$tokenHash{'RPKM'} = $tokenHash{'RPK'} / ($totalReadCount / 1000000);
+			print $writer join("\t", @tokenHash{@columnList, @valueColumnList}), "\n";
+			$orthologyTokenHashHash{$tokenHash{'orthology'}}->{$_} += $tokenHash{$_} foreach(@valueColumnList);
+		}
+		close($writer);
+	}
+	{
+		open(my $writer, "> $outputPrefix.abundance.txt");
+		if($orthologyDefinitionFile ne '') {
+			print $writer join("\t", 'orthology', 'definition', @valueColumnList), "\n";
+			foreach my $orthology (sort keys %orthologyTokenHashHash) {
+				my $tokenHash = $orthologyTokenHashHash{$orthology};
+				my $definition = $orthologyDefinitionHash{$orthology};
+				$definition = '' unless(defined($definition));
+				print $writer join("\t", $orthology, $definition, @$tokenHash{@valueColumnList}), "\n";
+			}
+		} else {
+			print $writer join("\t", 'orthology', @valueColumnList), "\n";
+			foreach my $orthology (sort keys %orthologyTokenHashHash) {
+				my $tokenHash = $orthologyTokenHashHash{$orthology};
+				print $writer join("\t", $orthology, @$tokenHash{@valueColumnList}), "\n";
 			}
 		}
+		close($writer);
 	}
 }
 
@@ -447,4 +493,15 @@ sub getPositionList {
 		}
 	}
 	return @positionList;
+}
+
+sub getSamtoolsVersion {
+	my $samtoolsVersion = '';
+	open(my $reader, "samtools 2>&1 |");
+	while(my $line = <$reader>) {
+		chomp($line);
+		$samtoolsVersion = $1 if($line =~ /^Version: (.*)$/);
+	}
+	close($reader);
+	return $samtoolsVersion;
 }
