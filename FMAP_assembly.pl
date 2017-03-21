@@ -14,7 +14,7 @@ my @codonList = ();
 
 GetOptions('h' => \(my $help = ''),
 	'a=s' => \(my $assemblyPrefix = ''),
-	'b=s' => \(my $bamInput = ''),
+	'b' => \(my $bamInput = ''),
 	'p=i' => \(my $threads = 1),
 	'e=f' => \(my $evalue = 10),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
