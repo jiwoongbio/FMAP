@@ -99,7 +99,7 @@ Options: -h       display this help message
     1. Prefix.region.abundance.txt (abundances of ORF regions mapping to KEGG orthologies)
     2. Prefix.abundance.txt (abundances of KEGG orthologies)
 ```
-Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]]] > summary.txt
+Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]] > summary.txt
 
 Options: -h       display this help message
          -a STR   prepared assembly prefix

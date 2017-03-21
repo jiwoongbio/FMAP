@@ -30,7 +30,7 @@ GetOptions('h' => \(my $help = ''),
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
-Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]]] > summary.txt
+Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]] > summary.txt
 
 Options: -h       display this help message
          -a STR   prepared assembly prefix
