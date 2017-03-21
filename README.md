@@ -22,14 +22,14 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 
 * [R](http://www.r-project.org) - statistical computing
 
-* [Statistics::R](http://search.cpan.org/~fangly/Statistics-R-0.33/lib/Statistics/R.pm) - Perl interface with the R statistical program
+* [Statistics::R](http://search.cpan.org/~fangly/Statistics-R-0.34/lib/Statistics/R.pm) - Perl interface with the R statistical program
   * Use CPAN to install the module  
    ```
    perl -MCPAN -e 'install Statistics::R'
    ```
   * or download the source and compile manually  
    ```
-   wget 'http://search.cpan.org/CPAN/authors/id/F/FA/FANGLY/Statistics-R-0.33.tar.gz'
+   wget 'http://search.cpan.org/CPAN/authors/id/F/FA/FANGLY/Statistics-R-0.34.tar.gz'
    tar zxf Statistics-R-0.33.tar.gz
    cd Statistics-R-0.33
    perl Makefile.PL
@@ -43,6 +43,8 @@ Some example results are available at the homepage: https://qbrc.swmed.edu/FMAP/
 * Linux commands: [```wget```](https://www.gnu.org/software/wget/), ```cat```, ```sort```
 
 * [Bio::DB::Taxonomy](http://search.cpan.org/dist/BioPerl/Bio/DB/Taxonomy.pm) - Access to a taxonomy database (which is required only if you want to build a custom database.)
+
+* [XML::LibXML](http://search.cpan.org/dist/XML-LibXML/LibXML.pod) - Perl Binding for libxml2 (which is required only if you want to download genome sequences.)
 
 
 ## Command usages
@@ -97,16 +99,18 @@ Options: -h       display this help message
     1. Prefix.region.abundance.txt (abundances of ORF regions mapping to KEGG orthologies)
     2. Prefix.abundance.txt (abundances of KEGG orthologies)
 ```
-Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta input1.fastq|input1.R1.fastq,input1.R2.fastq [input2.fastq|input2.R1.fastq,input2.R2.fastq [...]] > summary.txt
+Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]]] > summary.txt
 
 Options: -h       display this help message
+         -a STR   prepared assembly prefix
+         -b       input indexed sorted BAM file instead of FASTQ file
          -p INT   number of threads [1]
          -e FLOAT maximum e-value to report alignments for "diamond" [10]
          -t DIR   directory for temporary files [$TMPDIR or /tmp]
-         -c STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
-         -s STR   start codons [GTG,ATG,CTG,TTG,ATA,ATC,ATT]
+         -C STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
+         -S STR   start codons [GTG,ATG,CTG,TTG,ATA,ATC,ATT]
          -l INT   minimum translation length [10]
-         -m FLOAT minimum coverage [0.8]
+         -c FLOAT minimum coverage [0.8]
          -q INT   minimum mapping quality [0]
          -s STR   strand specificity, "f" or "r"
 ```
@@ -119,6 +123,16 @@ Usage:   perl FMAP_assembly_operon.pl [options] FMAP_assembly.region.txt > FMAP_
 
 Options: -h       display this help message
          -a       print single-gene operons as well
+```
+
+* **FMAP_download_genome.pl**
+  * Input: [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy) IDs (integer)
+  * Output: FASTA file containing genome sequences
+  * Require [XML::LibXML](http://search.cpan.org/dist/XML-LibXML/LibXML.pod).
+```
+Usage:   perl FMAP_download_genome.pl [options] NCBI_TaxID [...] > genome.fasta
+
+Options: -h       display this help message
 ```
 
 * **FMAP_download.pl**
