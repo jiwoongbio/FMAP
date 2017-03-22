@@ -67,6 +67,7 @@ foreach($assemblyFastaFile, "$databasePrefix.dmnd", "$databasePrefix.length.txt"
 	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my $outputDirectory = ($outputPrefix =~ /^(.*\/)/) ? $1 : '.';
+system("mkdir -p $outputDirectory");
 foreach($outputDirectory, $temporaryDirectory) {
 	die "ERROR in $0: '$_' is not a writable directory.\n" unless(-d $_ && -w $_);
 }
