@@ -133,6 +133,7 @@ Options: -h       display this help message
 Usage:   perl FMAP_download_genome.pl [options] NCBI_TaxID [...] > genome.fasta
 
 Options: -h       display this help message
+         -a       assembly instead of genome
 ```
 
 * **FMAP_download.pl**

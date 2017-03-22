@@ -6,13 +6,15 @@ local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 use Getopt::Long qw(:config no_ignore_case);
 use XML::LibXML;
 
-GetOptions('h' => \(my $help = ''));
+GetOptions('h' => \(my $help = ''),
+	'a' => \(my $assemblyInsteadOfGenome = ''));
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
 Usage:   perl FMAP_download_genome.pl [options] NCBI_TaxID [...] > genome.fasta
 
 Options: -h       display this help message
+         -a       assembly instead of genome
 
 EOF
 }
@@ -26,7 +28,11 @@ if(@taxonIdList) {
 my $baseURL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 foreach my $taxonId (@taxonIdList){
 	my %paramHash = ('db' => 'nuccore', 'usehistory' => 'y', 'retmax' => 500, 'rettype' => 'fasta', 'retmode' => 'text');
-	$paramHash{'term'} = sprintf('txid%d[Organism:exp] AND nucleotide_genome[Filter] AND RefSeq[Filter]', $taxonId);
+	if($assemblyInsteadOfGenome) {
+		$paramHash{'term'} = sprintf('txid%d[Organism:exp] AND nucleotide_assembly[Filter] AND RefSeq[Filter]', $taxonId);
+	} else {
+		$paramHash{'term'} = sprintf('txid%d[Organism:exp] AND nucleotide_genome[Filter] AND RefSeq[Filter]', $taxonId);
+	}
 	{
 		my $queryString = join('&', map {"$_=$paramHash{$_}"} 'db', 'term', 'usehistory');
 		my $xmlString = `wget --no-verbose -O - '$baseURL/esearch.fcgi?$queryString'`;
@@ -49,7 +55,7 @@ foreach my $taxonId (@taxonIdList){
 			my @lineList = ();
 			while(my $line = <$reader>) {
 				next if($line eq "\n");
-				if($line =~ /^>/) {
+				if($line =~ s/^>/>$taxonId:/) {
 					if(scalar(@lineList) > 1) {
 						print @lineList;
 						$count += 1;
