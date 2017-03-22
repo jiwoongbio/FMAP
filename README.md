@@ -113,6 +113,7 @@ Options: -h       display this help message
          -c FLOAT minimum coverage [0.8]
          -q INT   minimum mapping quality [0]
          -s STR   strand specificity, "f" or "r"
+         -P STR   contig prefix used for abundance estimation
 ```
 
 * **FMAP_assembly_operon.pl**

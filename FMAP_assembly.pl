@@ -24,6 +24,7 @@ GetOptions('h' => \(my $help = ''),
 	'c=f' => \(my $minimumCoverage = 0.8),
 	'q=i' => \(my $minimumMappingQuality = 0),
 	's=s' => \(my $stranded = ''),
+	'P=s' => \(my $contigPrefix = ''),
 	'orthology2definition=s' => \(my $orthologyDefinitionFile = ''),
 	'protein2orthology=s' => \(my $proteinOrthologyFile = ''),
 	'd=s' => \$databasePrefix);
@@ -44,6 +45,7 @@ Options: -h       display this help message
          -c FLOAT minimum coverage [$minimumCoverage]
          -q INT   minimum mapping quality [$minimumMappingQuality]
          -s STR   strand specificity, "f" or "r"
+         -P STR   contig prefix used for abundance estimation
 
 EOF
 }
@@ -354,6 +356,7 @@ if(@bamFileList) { # Abundance estimation
 			chomp($line);
 			my %tokenHash = ();
 			@tokenHash{@columnList} = split(/\t/, $line);
+			next unless($tokenHash{'contig'} =~ /^$contigPrefix/);
 			foreach my $bamFile (@bamFileList) {
 				my ($readCount, $baseCount) = getReadBaseCount($bamFile, @tokenHash{'contig', 'start', 'end', 'strand'});
 				$tokenHash{'readCount'} += $readCount;
