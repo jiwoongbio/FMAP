@@ -58,22 +58,36 @@ if(@taxonIdList) {
 	}
 	my $db = Bio::DB::Taxonomy->new(-source => 'flatfile', -directory => $dataPath, -nodesfile => "$dataPath/nodes.dmp", -namesfile => "$dataPath/names.dmp");
 	my @taxonList = map {$db->get_taxon(-taxonid => $_)} map {eval($_)} @taxonIdList;
-	$taxonIdHash{$_->id} = $_ foreach(@taxonList, (map {$db->get_all_Descendents($_)} @taxonList));
+	setTaxonIdHash($_) foreach(@taxonList);
+
+	sub setTaxonIdHash {
+		my ($taxon) = @_;
+		return if(defined($taxonIdHash{$taxon->id}));
+		$taxonIdHash{$taxon->id} = $taxon;
+		my @taxonList = $db->each_Descendent($taxon);
+		setTaxonIdHash($_) foreach(@taxonList);
+	}
+}
+{
+	my $URL = "http://rest.genome.jp/link/ko/uniprot";
+	my $file = "$dataPath/KEGG_orthology2uniprot.txt";
+	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
+	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
+}
+my %uniprotOrthologyListHash = ();
+{
+	open(my $reader, "$dataPath/KEGG_orthology2uniprot.txt");
+	while(my $line = <$reader>) {
+		chomp($line);
+		my ($uniprot, $orthology) = split(/\t/, $line);
+		$uniprot =~ s/^up://;
+		$orthology =~ s/^ko://;
+		push(@{$uniprotOrthologyListHash{$uniprot}}, $orthology);
+	}
+	close($reader);
 }
 my %unirefOrthologyCountHash = ();
 {
-	my %uniprotOrthologyListHash = ();
-	{
-		open(my $reader, "wget --no-verbose -O - http://rest.genome.jp/link/ko/uniprot |");
-		while(my $line = <$reader>) {
-			chomp($line);
-			my ($uniprot, $orthology) = split(/\t/, $line);
-			$uniprot =~ s/^up://;
-			$orthology =~ s/^ko://;
-			push(@{$uniprotOrthologyListHash{$uniprot}}, $orthology);
-		}
-		close($reader);
-	}
 	my $URL = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping.dat.gz";
 	my $file = "$dataPath/idmapping.dat.gz";
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
