@@ -236,13 +236,14 @@ if($assemblyNotPrepared) { # ORF translation
 			($start, $end) = (($sequenceLength - $endIndex) + 1, ($sequenceLength - $startIndexList[0])) if($strand eq '-');
 			my @startList = map {($_ - $startIndexList[0]) / 3 + 1} @startIndexList;
 			print $writer '>', join('|', $contig, $start, $end, $strand, @startList), "\n";
-			print $writer translate(substr($sequence, $startIndexList[0], $length)), "\n";
+			(my $translationSequence = translate(substr($sequence, $startIndexList[0], $length))) =~ s/\*$//;
+			print $writer "$translationSequence\n";
 		}
 	}
 }
 
 if($assemblyNotPrepared) { # ORF translation mapping
-	system("diamond blastp --threads $threads --db $databasePrefix.dmnd --query $assemblyPrefix.translation.fasta --out $assemblyPrefix.blast.txt --outfmt 6 --sensitive --evalue $evalue --tmpdir $temporaryDirectory 1>&2");
+	system("diamond blastp --threads $threads --db $databasePrefix.dmnd --query $assemblyPrefix.translation.fasta --out $assemblyPrefix.blast.txt --outfmt 6 --max-target-seqs 0 --evalue $evalue --sensitive --tmpdir $temporaryDirectory --salltitles 1>&2");
 
 	my %proteinSequenceLengthHash = ();
 	{

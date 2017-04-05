@@ -69,7 +69,7 @@ if(@taxonIdList) {
 	}
 }
 {
-	my $URL = "http://rest.genome.jp/link/ko/uniprot";
+	my $URL = "http://rest.genome.jp/link/uniprot/ko";
 	my $file = "$dataPath/KEGG_orthology2uniprot.txt";
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
 	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
@@ -79,9 +79,9 @@ my %uniprotOrthologyListHash = ();
 	open(my $reader, "$dataPath/KEGG_orthology2uniprot.txt");
 	while(my $line = <$reader>) {
 		chomp($line);
-		my ($uniprot, $orthology) = split(/\t/, $line);
-		$uniprot =~ s/^up://;
+		my ($orthology, $uniprot) = split(/\t/, $line);
 		$orthology =~ s/^ko://;
+		$uniprot =~ s/^up://;
 		push(@{$uniprotOrthologyListHash{$uniprot}}, $orthology);
 	}
 	close($reader);
