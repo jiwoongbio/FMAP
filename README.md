@@ -181,7 +181,11 @@ Options: -h       display this help message
 Usage:   perl FMAP_table.pl [options] [name1=]abundance1.txt [[name2=]abundance2.txt [...]] > abundance_table.txt
 
 Options: -h       display this help message
-         -c       use raw counts instead of RPKM values
+         -c       use raw read counts (readCount|count) instead of RPKM values
+         -d       use normalized mean depths (meanDepth/genome) instead of RPKM values
+         -f       use fractions
+         -n       do not print definitions
+         -r       print ORF regions
 ```
 
 * **FMAP_comparison.pl**
