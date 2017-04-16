@@ -28,9 +28,9 @@ Options: -h       display this help message
 
 EOF
 }
-(my $mapper = $mapperPath) =~ s/^.*\///;
 die "ERROR in $0: 'wget' is not executable.\n" unless(-x getCommandPath('wget'));
-die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
+(my $mapper = $mapperPath) =~ s/^.*\///;
+die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper =~ /^diamond/ || $mapper =~ /^usearch/);
 die "ERROR in $0: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
 # Database
@@ -47,11 +47,11 @@ if(-r "$dataPath/database") {
 }
 if(-r "$databasePath.fasta") {
 	generateSequenceLengthFile("$databasePath.length.txt", "$databasePath.fasta");
-	if($mapper eq 'diamond') {
-		system("$mapperPath makedb --db $databasePath.dmnd --in $databasePath.fasta 1>&2");
+	if($mapper =~ /^diamond/) {
+		system("$mapperPath makedb --in $databasePath.fasta --db $databasePath.dmnd 1>&2");
 	}
-	if($mapper eq 'usearch') {
-		system("$mapperPath -makeudb_usearch $databasePath.fasta -output $databasePath.udb 1>&2");
+	if($mapper =~ /^usearch/) {
+		system("$mapperPath -makeudb_ublast $databasePath.fasta -output $databasePath.udb 1>&2");
 	}
 } else {
 	die "ERROR in $0: The database is not available.\n";

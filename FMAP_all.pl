@@ -35,7 +35,7 @@ Options: -h       display this help message
 EOF
 }
 (my $mapper = $mapperPath) =~ s/^.*\///;
-die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
+die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper =~ /^diamond/ || $mapper =~ /^usearch/);
 die "ERROR in $0: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
 die "ERROR in $0: The test is not provided.\n" if(scalar(grep {$test eq $_} ('kruskal', 'anova', 'poisson', 'quasipoisson')) == 0);

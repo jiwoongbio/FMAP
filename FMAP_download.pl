@@ -31,7 +31,7 @@ die "ERROR in $0: 'wget' is not executable.\n" unless(-x getCommandPath('wget'))
 
 # Database
 unless($downloadOnlyKEGG) {
-	die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper eq 'diamond' || $mapper eq 'usearch');
+	die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper =~ /^diamond/ || $mapper =~ /^usearch/);
 	die "ERROR in $0: The mapper is not executable.\n" unless(-x getCommandPath($mapperPath));
 
 	downloadFile('database');
@@ -57,11 +57,11 @@ unless($downloadOnlyKEGG) {
 		}
 		close($writer);
 	
-		if($mapper eq 'diamond') {
-			system("$mapperPath makedb --db $databasePath.dmnd --in $databasePath.fasta");
+		if($mapper =~ /^diamond/) {
+			system("$mapperPath makedb --in $databasePath.fasta --db $databasePath.dmnd");
 		}
-		if($mapper eq 'usearch') {
-			system("$mapperPath -makeudb_usearch $databasePath.fasta -output $databasePath.udb");
+		if($mapper =~ /^usearch/) {
+			system("$mapperPath -makeudb_ublast $databasePath.fasta -output $databasePath.udb");
 		}
 	}
 }

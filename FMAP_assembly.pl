@@ -13,11 +13,13 @@ my $databasePrefix = "$fmapPath/FMAP_data/$database";
 my @codonList = ();
 
 GetOptions('h' => \(my $help = ''),
-	'a=s' => \(my $assemblyPrefix = ''),
-	'b' => \(my $bamInput = ''),
+	'A=s' => \(my $assemblyPrefix = ''),
+	'B' => \(my $bamInput = ''),
+	'm=s' => \(my $mapperPath = 'diamond'),
 	'p=i' => \(my $threads = 1),
 	'e=f' => \(my $evalue = 10),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
+	'a=f' => \(my $acceleration = 0.5),
 	'C=s' => \@codonList,
 	'S=s' => \(my $startCodons = 'GTG,ATG,CTG,TTG,ATA,ATC,ATT'),
 	'T=s' => \(my $terminationCodons = 'TAG,TAA,TGA'),
@@ -35,11 +37,13 @@ if($help || scalar(@ARGV) == 0) {
 Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]] > summary.txt
 
 Options: -h       display this help message
-         -a STR   prepared assembly prefix
-         -b       input indexed sorted BAM file instead of FASTQ file
+         -A STR   prepared assembly prefix
+         -B       input indexed sorted BAM file instead of FASTQ file
+         -m FILE  executable file path of mapping program, "diamond" or "usearch" [$mapperPath]
          -p INT   number of threads [$threads]
-         -e FLOAT maximum e-value to report alignments for "diamond" [$evalue]
+         -e FLOAT maximum e-value to report alignments [$evalue]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
+         -a FLOAT search acceleration for ublast [$acceleration]
          -C STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
          -S STR   comma-separated start codons [$startCodons]
          -T STR   comma-separated termination codons [$terminationCodons]
@@ -62,10 +66,15 @@ if($assemblyPrefix eq '') {
 	die "ERROR in $0: '$assemblyPrefix.region.txt' is not readable.\n" unless(-r "$assemblyPrefix.region.txt");
 }
 
-foreach('bwa', 'samtools', 'diamond') {
+(my $mapper = $mapperPath) =~ s/^.*\///;
+die "ERROR in $0: The mapper must be \"diamond\" or \"usearch\".\n" unless($mapper =~ /^diamond/ || $mapper =~ /^usearch/);
+foreach('bwa', 'samtools', $mapperPath) {
 	die "ERROR in $0: '$_' is not executable.\n" unless(-x getCommandPath($_));
 }
-foreach($assemblyFastaFile, "$databasePrefix.dmnd", "$databasePrefix.length.txt") {
+my $databaseFile = '';
+$databaseFile = "$databasePrefix.dmnd" if($mapper =~ /^diamond/);
+$databaseFile = "$databasePrefix.udb" if($mapper =~ /^usearch/);
+foreach($assemblyFastaFile, $databaseFile, "$databasePrefix.length.txt") {
 	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my $outputDirectory = ($outputPrefix =~ /^(.*\/)/) ? $1 : '.';
@@ -243,7 +252,8 @@ if($assemblyNotPrepared) { # ORF translation
 }
 
 if($assemblyNotPrepared) { # ORF translation mapping
-	system("diamond blastp --threads $threads --db $databasePrefix.dmnd --query $assemblyPrefix.translation.fasta --out $assemblyPrefix.blast.txt --outfmt 6 --max-target-seqs 0 --evalue $evalue --sensitive --tmpdir $temporaryDirectory --salltitles 1>&2");
+	system("$mapperPath blastp --query $assemblyPrefix.translation.fasta --db $databaseFile --out $assemblyPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --max-target-seqs 0 1>&2") if($mapper =~ /^diamond/);
+	system("$mapperPath -ublast $assemblyPrefix.translation.fasta -db $databaseFile -blast6out $assemblyPrefix.blast.txt -evalue $evalue -accel $acceleration -threads $threads 1>&2") if($mapper =~ /^usearch/);
 
 	my %proteinSequenceLengthHash = ();
 	{
@@ -347,8 +357,8 @@ if(@bamFileList) { # Abundance estimation
 	my @valueColumnList = ('readCount', 'RPKM', 'meanDepth', 'meanDepth/contig', 'meanDepth/genome');
 	my %orthologyTokenHashHash = ();
 	{
+		my %readCountHash = ();
 		my @tokenHashList = ();
-		my $totalReadCount = 0;
 		open(my $reader, "$assemblyPrefix.region.txt");
 		chomp(my $line = <$reader>);
 		my @columnList = split(/\t/, $line);
@@ -358,9 +368,10 @@ if(@bamFileList) { # Abundance estimation
 			@tokenHash{@columnList} = split(/\t/, $line);
 			next unless($tokenHash{'contig'} =~ /^$contigPrefix/);
 			foreach my $bamFile (@bamFileList) {
-				my ($readCount, $baseCount) = getReadBaseCount($bamFile, @tokenHash{'contig', 'start', 'end', 'strand'});
-				$tokenHash{'readCount'} += $readCount;
+				my ($baseCount, @readList) = getBaseCountReadList($bamFile, @tokenHash{'contig', 'start', 'end', 'strand'});
 				$tokenHash{'baseCount'} += $baseCount;
+				$tokenHash{'readCount'} += scalar(@readList);
+				$readCountHash{$_} += 1 foreach(@readList);
 			}
 			$tokenHash{'length'} = $tokenHash{'end'} - $tokenHash{'start'} + 1;
 			$tokenHash{'RPK'} = $tokenHash{'readCount'} / ($tokenHash{'length'} / 1000);
@@ -372,9 +383,9 @@ if(@bamFileList) { # Abundance estimation
 				$tokenHash{'meanDepth/genome'} = $tokenHash{'meanDepth'} / $genomeMeanDepth;
 			}
 			push(@tokenHashList, \%tokenHash);
-			$totalReadCount += $tokenHash{'readCount'};
 		}
 		close($reader);
+		my $totalReadCount = scalar(keys %readCountHash);
 		open(my $writer, "> $outputPrefix.region.abundance.txt");
 		print $writer join("\t", @columnList, @valueColumnList), "\n";
 		foreach(@tokenHashList) {
@@ -428,10 +439,10 @@ sub getOrthology {
 	return $protein;
 }
 
-sub getReadBaseCount {
+sub getBaseCountReadList {
 	my ($bamFile, $contig, $start, $end, $strand) = @_;
-	my %readCountHash = ();
 	my $baseCount = 0;
+	my %readCountHash = ();
 	open(my $reader, "samtools view -F 2052 -q $minimumMappingQuality $bamFile $contig:$start-$end |");
 	while(my $line = <$reader>) {
 		chomp($line);
@@ -440,12 +451,12 @@ sub getReadBaseCount {
 		next if($stranded ne '' && getReadStrand($tokenHash{'flag'}) ne $strand);
 		my @positionList = getPositionList(@tokenHash{'pos', 'cigar'});
 		if(@positionList = grep {$start <= $_ && $_ <= $end} grep {defined} @positionList) {
-			$readCountHash{$tokenHash{'qname'}} += 1;
 			$baseCount += scalar(@positionList);
+			$readCountHash{$tokenHash{'qname'}} += 1;
 		}
 	}
 	close($reader);
-	return (scalar(keys %readCountHash), $baseCount);
+	return ($baseCount, keys %readCountHash);
 }
 
 sub getReadStrand {
