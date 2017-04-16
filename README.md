@@ -102,13 +102,16 @@ Options: -h       display this help message
 Usage:   perl FMAP_assembly.pl [options] output.prefix assembly.fasta [input.fastq|input.R1.fastq,input.R2.fastq [...]] > summary.txt
 
 Options: -h       display this help message
-         -a STR   prepared assembly prefix
-         -b       input indexed sorted BAM file instead of FASTQ file
+         -A STR   prepared assembly prefix
+         -B       input indexed sorted BAM file instead of FASTQ file
+         -m FILE  executable file path of mapping program, "diamond" or "usearch" [diamond]
          -p INT   number of threads [1]
-         -e FLOAT maximum e-value to report alignments for "diamond" [10]
+         -e FLOAT maximum e-value to report alignments [10]
          -t DIR   directory for temporary files [$TMPDIR or /tmp]
+         -a FLOAT search acceleration for ublast [0.5]
          -C STR   codon and translation e.g. ATG=M [NCBI genetic code 11 (Bacterial, Archaeal and Plant Plastid)]
-         -S STR   start codons [GTG,ATG,CTG,TTG,ATA,ATC,ATT]
+         -S STR   comma-separated start codons [GTG,ATG,CTG,TTG,ATA,ATC,ATT]
+         -T STR   comma-separated termination codons [TAG,TAA,TGA]
          -l INT   minimum translation length [10]
          -c FLOAT minimum coverage [0.8]
          -q INT   minimum mapping quality [0]
@@ -156,9 +159,9 @@ Usage:   perl FMAP_mapping.pl [options] input1.fastq|input1.fasta [input2.fastq|
 Options: -h       display this help message
          -m FILE  executable file path of mapping program, "diamond" or "usearch" [diamond]
          -p INT   number of threads [1]
-         -e FLOAT maximum e-value to report alignments for "diamond" [0.001]
-         -i FLOAT minimum identity for "usearch_global" [0.8]
+         -e FLOAT maximum e-value to report alignments [10]
          -t DIR   directory for temporary files [$TMPDIR or /tmp]
+         -a FLOAT search acceleration for ublast [0.5]
 ```
 
 * **FMAP_quantification.pl**
