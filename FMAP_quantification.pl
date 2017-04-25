@@ -13,11 +13,12 @@ my $databasePath = "$fmapPath/FMAP_data/$database";
 
 GetOptions('h' => \(my $help = ''),
 	'c' => \(my $cpmInsteadOfRPKM = ''),
-	'w=s' => \(my $readNameWeightFile = ''),
 	'i=f' => \(my $minimumPercentIdentity = 80),
-	'o=s' => \(my $orthologyDefinitionFile = ''),
-	'p=s' => \(my $proteinOrthologyFile = ''),
-	'd=s' => \$databasePath);
+	'l=s' => \(my $proteinLengthFile = "$databasePath.length.txt"),
+	'o=s' => \(my $proteinOrthologyFile = ''),
+	'd=s' => \(my $orthologyDefinitionFile = ''),
+	'w=s' => \(my $readNameWeightFile = ''),
+);
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -25,20 +26,24 @@ Usage:   perl FMAP_quantification.pl [options] blast_hits1.txt [blast_hits2.txt 
 
 Options: -h       display this help message
          -c       use CPM values instead of RPKM values
+         -i FLOAT minimum percent identity [$minimumPercentIdentity]
+         -l FILE  tab-delimited text file with the first column having protein names and the second column having the sequence lengths
+         -o FILE  tab-delimited text file with the first column having protein names and the second column having the orthology names
+         -d FILE  tab-delimited text file with the first column having orthology names and the second column having the definitions
          -w FILE  tab-delimited text file with the first column having read names and the second column having the weights
 
 EOF
 }
-$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($databasePath eq "$fmapPath/FMAP_data/$database" && $orthologyDefinitionFile eq '');
+$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($proteinLengthFile eq "$databasePath.length.txt" && $orthologyDefinitionFile eq '');
 
 my (@inputFileList) = @ARGV;
-my %orthologyDefinitionHash = ();
-if($orthologyDefinitionFile ne '') {
-	open(my $reader, $orthologyDefinitionFile);
+my %proteinLengthHash = ();
+{
+	open(my $reader, $proteinLengthFile);
 	while(my $line = <$reader>) {
 		chomp($line);
-		my ($orthology, $definition) = split(/\t/, $line);
-		$orthologyDefinitionHash{$orthology} = $definition;
+		my ($protein, $length) = split(/\t/, $line);
+		$proteinLengthHash{$protein} = $length;
 	}
 	close($reader);
 }
@@ -52,6 +57,16 @@ if($proteinOrthologyFile ne '') {
 	}
 	close($reader);
 }
+my %orthologyDefinitionHash = ();
+if($orthologyDefinitionFile ne '') {
+	open(my $reader, $orthologyDefinitionFile);
+	while(my $line = <$reader>) {
+		chomp($line);
+		my ($orthology, $definition) = split(/\t/, $line);
+		$orthologyDefinitionHash{$orthology} = $definition;
+	}
+	close($reader);
+}
 my %readNameWeightHash = ();
 if($readNameWeightFile ne '') {
 	open(my $reader, $readNameWeightFile);
@@ -62,42 +77,35 @@ if($readNameWeightFile ne '') {
 	}
 	close($reader);
 }
-my %orthologyHash = ();
-my %proteinLengthHash = ();
-{
-	open(my $reader, "$databasePath.length.txt");
-	while(my $line = <$reader>) {
-		chomp($line);
-		my ($protein, $length) = split(/\t/, $line);
-		$orthologyHash{my $orthology = getOrthology($protein)} = 1;
-		$proteinLengthHash{$protein} = $length;
-	}
-	close($reader);
-}
 
 my ($totalReadCount, %orthologyCountHash, %orthologyRpkHash) = (0);
-my ($previousReadName, %orthologyProteinLengthHash) = ('');
-open(my $reader, "cat @inputFileList | sort --field-separator='\t' -k1,1 |");
+my %topTokenHash = ();
+$topTokenHash{'qseqid'} = '';
+my %orthologyProteinLengthHash = ();
+open(my $reader, "cat @inputFileList | sort --field-separator='\t' -k1,1 -k11,11g -k12,12gr |");
 while(my $line = <$reader>) {
 	chomp($line);
-	my ($readName, $protein, $percentIdentity) = split(/\t/, $line);
-	next if($percentIdentity < $minimumPercentIdentity);
-	if($readName ne $previousReadName) {
-		if($previousReadName ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$previousReadName} : 1)) {
+	my %tokenHash = ();
+	@tokenHash{qw(qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore)} = split(/\t/, $line);
+	next if($tokenHash{'pident'} < $minimumPercentIdentity);
+	if($tokenHash{'qseqid'} ne $topTokenHash{'qseqid'}) {
+		if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
 			if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) == 1) {
 				$orthologyCountHash{$_} += $weight foreach(@orthologyList);
 				$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
 			}
 			$totalReadCount += $weight;
 		}
-		($previousReadName, %orthologyProteinLengthHash) = ($readName);
+		%topTokenHash = %tokenHash;
+		%orthologyProteinLengthHash = ();
 	}
-	if(defined($orthologyHash{my $orthology = getOrthology($protein)})) {
-		$orthologyProteinLengthHash{$orthology}->{$protein} = $proteinLengthHash{$protein};
+	if(scalar(grep {$tokenHash{$_} != $topTokenHash{$_}} 'evalue', 'bitscore') == 0) {
+		my $orthology = getOrthology(my $protein = $tokenHash{'sseqid'});
+		$orthologyProteinLengthHash{$orthology}->{$protein} = $_ if(defined($_ = $proteinLengthHash{$protein}));
 	}
 }
 close($reader);
-if($previousReadName ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$previousReadName} : 1)) {
+if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
 	if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) == 1) {
 		$orthologyCountHash{$_} += $weight foreach(@orthologyList);
 		$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
@@ -107,7 +115,7 @@ if($previousReadName ne '' && defined(my $weight = $readNameWeightFile ne '' ? $
 
 if($orthologyDefinitionFile ne '') {
 	print join("\t", 'orthology', 'definition', 'count', 'rpkm'), "\n";
-	foreach my $orthology (sort keys %orthologyHash) {
+	foreach my $orthology (sort keys %orthologyCountHash) {
 		my $definition = defined($_ = $orthologyDefinitionHash{$orthology}) ? $_ : '';
 		my $count = defined($_ = $orthologyCountHash{$orthology}) ? $_ : 0;
 		if($cpmInsteadOfRPKM) {
@@ -120,7 +128,7 @@ if($orthologyDefinitionFile ne '') {
 	}
 } else {
 	print join("\t", 'orthology', 'count', 'rpkm'), "\n";
-	foreach my $orthology (sort keys %orthologyHash) {
+	foreach my $orthology (sort keys %orthologyCountHash) {
 		my $count = defined($_ = $orthologyCountHash{$orthology}) ? $_ : 0;
 		if($cpmInsteadOfRPKM) {
 			my $cpm = $count / ($totalReadCount / 1000000);
