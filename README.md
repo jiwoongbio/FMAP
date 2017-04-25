@@ -173,6 +173,10 @@ Usage:   perl FMAP_quantification.pl [options] blast_hits1.txt [blast_hits2.txt 
 
 Options: -h       display this help message
          -c       use CPM values instead of RPKM values
+         -i FLOAT minimum percent identity [80]
+         -l FILE  tab-delimited text file with the first column having protein names and the second column having the sequence lengths
+         -o FILE  tab-delimited text file with the first column having protein names and the second column having the orthology names
+         -d FILE  tab-delimited text file with the first column having orthology names and the second column having the definitions
          -w FILE  tab-delimited text file with the first column having read names and the second column having the weights
 ```
 
