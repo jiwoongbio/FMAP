@@ -83,11 +83,19 @@ foreach($outputDirectory, $temporaryDirectory) {
 	die "ERROR in $0: '$_' is not a writable directory.\n" unless(-d $_ && -w $_);
 }
 
-$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($databasePrefix eq "$fmapPath/FMAP_data/$database" && $orthologyDefinitionFile eq '');
-die "ERROR in $0: '$orthologyDefinitionFile' is not readable.\n" unless(-r $orthologyDefinitionFile);
+if($databasePrefix eq "$fmapPath/FMAP_data/$database") {
+	if($database =~ /^orthology_uniref/) {
+		$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($orthologyDefinitionFile eq '');
+	}
+	if($database =~ /^ARDB/ || $database =~ /^betalactamases/) {
+		$orthologyDefinitionFile = "$databasePrefix.definition.txt" if($orthologyDefinitionFile eq '');
+		$proteinOrthologyFile = "$databasePrefix.txt" if($proteinOrthologyFile eq '');
+	}
+}
 
 my %orthologyDefinitionHash = ();
 if($orthologyDefinitionFile ne '') {
+	die "ERROR in $0: '$orthologyDefinitionFile' is not readable.\n" unless(-r $orthologyDefinitionFile);
 	open(my $reader, $orthologyDefinitionFile);
 	while(my $line = <$reader>) {
 		chomp($line);
@@ -97,12 +105,15 @@ if($orthologyDefinitionFile ne '') {
 	close($reader);
 }
 my %proteinOrthologyHash = ();
+my %proteinCutoffHash = ();
 if($proteinOrthologyFile ne '') {
+	die "ERROR in $0: '$proteinOrthologyFile' is not readable.\n" unless(-r $proteinOrthologyFile);
 	open(my $reader, $proteinOrthologyFile);
 	while(my $line = <$reader>) {
 		chomp($line);
-		my ($protein, $orthology) = split(/\t/, $line);
+		my ($protein, $orthology, $cutoff) = split(/\t/, $line);
 		$proteinOrthologyHash{$protein} = $orthology;
+		$proteinCutoffHash{$protein} = $cutoff;
 	}
 	close($reader);
 }
@@ -272,6 +283,7 @@ if($assemblyNotPrepared) { # ORF translation mapping
 			chomp($line);
 			my %tokenHash = ();
 			@tokenHash{qw(qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore)} = split(/\t/, $line);
+			next if(defined($_ = $proteinCutoffHash{$tokenHash{'sseqid'}}) && $tokenHash{'pident'} < $_);
 			$tokenHash{'coverage'} = (($tokenHash{'pident'} / 100) * $tokenHash{'length'}) / $proteinSequenceLengthHash{$tokenHash{'sseqid'}};
 			print $writer join("\t", $line, $tokenHash{'coverage'}), "\n" if($tokenHash{'coverage'} >= $minimumCoverage && $tokenHash{'qstart'} <= $tokenHash{'qend'} && $tokenHash{'sstart'} <= $tokenHash{'send'});
 		}

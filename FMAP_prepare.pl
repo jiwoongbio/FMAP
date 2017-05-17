@@ -15,7 +15,10 @@ my $fmapURL = 'http://qbrc.swmed.edu/FMAP';
 GetOptions('h' => \(my $help = ''),
 	'r' => \(my $redownload = ''),
 	'm=s' => \(my $mapperPath = 'diamond'),
-	'k' => \(my $downloadPrebuiltKEGG = ''));
+	'k' => \(my $downloadPrebuiltKEGG = ''),
+	'a' => \(my $ardbDatabase = ''),
+	'b' => \(my $betalactamasesDatabase = ''),
+);
 if($help) {
 	die <<EOF;
 
@@ -25,6 +28,8 @@ Options: -h       display this help message
          -r       redownload data
          -m FILE  executable file path of mapping program, "diamond" or "usearch" [$mapperPath]
          -k       download prebuilt KEGG files
+         -a       download ARDB database
+         -b       download beta-lactamase database
 
 EOF
 }
@@ -39,11 +44,23 @@ if(-r "$dataPath/database") {
 	$database = loadDefaultDatabase();
 	$databasePath = "$dataPath/$database";
 } else {
-	downloadFile('database');
+	if($ardbDatabase) {
+		downloadFile('ARDB.database');
+		system("mv $dataPath/ARDB.database $dataPath/database");
+	} elsif($betalactamasesDatabase) {
+		downloadFile('betalactamases.database');
+		system("mv $dataPath/betalactamases.database $dataPath/database");
+	} else {
+		downloadFile('database');
+	}
 	$database = loadDefaultDatabase();
 	downloadFile("$database.fasta.gz");
 	system("gzip -df $dataPath/$database.fasta.gz");
 	$databasePath = "$dataPath/$database";
+	if($ardbDatabase || $betalactamasesDatabase) {
+		downloadFile("$database.txt");
+		downloadFile("$database.definition.txt");
+	}
 }
 if(-r "$databasePath.fasta") {
 	generateSequenceLengthFile("$databasePath.length.txt", "$databasePath.fasta");
@@ -58,7 +75,7 @@ if(-r "$databasePath.fasta") {
 }
 
 # KEGG
-{
+if($database =~ s/^orthology_uniref//) {
 	my $file = 'KEGG_orthology.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -75,7 +92,7 @@ if(-r "$databasePath.fasta") {
 		close($writer);
 	}
 }
-{
+if($database =~ s/^orthology_uniref//) {
 	my $file = 'KEGG_orthology2pathway.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -95,7 +112,7 @@ if(-r "$databasePath.fasta") {
 		close($writer);
 	}
 }
-{
+if($database =~ s/^orthology_uniref//) {
 	my $file = 'KEGG_pathway.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -114,7 +131,7 @@ if(-r "$databasePath.fasta") {
 		close($writer);
 	}
 }
-{
+if($database =~ s/^orthology_uniref//) {
 	my $file = 'KEGG_orthology2module.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -132,7 +149,7 @@ if(-r "$databasePath.fasta") {
 		close($writer);
 	}
 }
-{
+if($database =~ s/^orthology_uniref//) {
 	my $file = 'KEGG_module.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -151,9 +168,11 @@ if(-r "$databasePath.fasta") {
 }
 
 # Operon
-chomp(my $hostname = `hostname`);
-if($fmapURL !~ /:\/\/$hostname\//) {
-	downloadFile('known_operon.KEGG_orthology.txt', 'known_operon.definition.txt', 'known_operon.KEGG_orthology_definition.txt', 'known_operon.KEGG_pathway.txt');
+if($database =~ s/^orthology_uniref//) {
+	chomp(my $hostname = `hostname`);
+	if($fmapURL !~ /:\/\/$hostname\//) {
+		downloadFile('known_operon.KEGG_orthology.txt', 'known_operon.definition.txt', 'known_operon.KEGG_orthology_definition.txt', 'known_operon.KEGG_pathway.txt');
+	}
 }
 
 sub downloadFile {

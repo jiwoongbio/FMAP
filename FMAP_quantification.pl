@@ -9,12 +9,12 @@ use List::Util qw(min);
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 my $database = loadDefaultDatabase();
-my $databasePath = "$fmapPath/FMAP_data/$database";
+my $databasePrefix = "$fmapPath/FMAP_data/$database";
 
 GetOptions('h' => \(my $help = ''),
 	'c' => \(my $cpmInsteadOfRPKM = ''),
 	'i=f' => \(my $minimumPercentIdentity = 80),
-	'l=s' => \(my $proteinLengthFile = "$databasePath.length.txt"),
+	'l=s' => \(my $proteinLengthFile = "$databasePrefix.length.txt"),
 	'o=s' => \(my $proteinOrthologyFile = ''),
 	'd=s' => \(my $orthologyDefinitionFile = ''),
 	'w=s' => \(my $readNameWeightFile = ''),
@@ -34,7 +34,15 @@ Options: -h       display this help message
 
 EOF
 }
-$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($proteinLengthFile eq "$databasePath.length.txt" && $orthologyDefinitionFile eq '');
+if($proteinLengthFile eq "$databasePrefix.length.txt") {
+	if($database =~ /^orthology_uniref/) {
+		$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($orthologyDefinitionFile eq '');
+	}
+	if($database =~ /^ARDB/ || $database =~ /^betalactamases/) {
+		$orthologyDefinitionFile = "$databasePrefix.definition.txt" if($orthologyDefinitionFile eq '');
+		$proteinOrthologyFile = "$databasePrefix.txt" if($proteinOrthologyFile eq '');
+	}
+}
 
 my (@inputFileList) = @ARGV;
 my %proteinLengthHash = ();
