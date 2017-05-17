@@ -118,7 +118,7 @@ if($proteinOrthologyFile ne '') {
 	close($reader);
 }
 
-if($assemblyNotPrepared) { # BWA index
+if($assemblyNotPrepared && $bamInput eq '') { # BWA index
 	system("bwa index -p $assemblyPrefix.bwa_index $assemblyFastaFile 1>&2");
 }
 
