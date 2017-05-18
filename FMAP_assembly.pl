@@ -313,6 +313,7 @@ if($assemblyNotPrepared) { # ORF translation mapping
 					$tokenHash{'end'}   -= $startIndex * 3 if($tokenHash{'strand'} eq '-');
 				}
 				$tokenHash{'orthology'} = getOrthology($tokenHash{'sseqid'});
+				next if($tokenHash{'orthology'} eq 'off-target');
 				print $writer join("\t", @tokenHash{'contig', 'start', 'end', 'strand', 'orthology'}), "\n";
 			}
 		}
