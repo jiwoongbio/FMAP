@@ -51,7 +51,7 @@ foreach my $taxonId (@taxonIdList) {
 				my @lineList = ();
 				while(my $line = <$reader>) {
 					next if($line eq "\n");
-					if($line =~ s/^>/>$taxonId:/) {
+					if($line =~ s/^>/>${taxonId}::/) {
 						if(scalar(@lineList) > 1) {
 							print @lineList;
 							$count += 1;

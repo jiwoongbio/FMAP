@@ -37,8 +37,7 @@ EOF
 if($proteinLengthFile eq "$databasePrefix.length.txt") {
 	if($database =~ /^orthology_uniref/) {
 		$orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_orthology.txt" if($orthologyDefinitionFile eq '');
-	}
-	if($database =~ /^ARDB/ || $database =~ /^betalactamases/) {
+	} elsif($database =~ /^ARDB/ || $database =~ /^betalactamases/) {
 		$orthologyDefinitionFile = "$databasePrefix.definition.txt" if($orthologyDefinitionFile eq '');
 		$proteinOrthologyFile = "$databasePrefix.txt" if($proteinOrthologyFile eq '');
 	}
