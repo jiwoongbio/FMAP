@@ -86,38 +86,40 @@ if($readNameWeightFile ne '') {
 }
 
 my ($totalReadCount, %orthologyCountHash, %orthologyRpkHash) = (0);
-my %topTokenHash = ();
-$topTokenHash{'qseqid'} = '';
-my %orthologyProteinLengthHash = ();
-open(my $reader, "cat @inputFileList | sort --field-separator='\t' -k1,1 -k11,11g -k12,12gr |");
-while(my $line = <$reader>) {
-	chomp($line);
-	my %tokenHash = ();
-	@tokenHash{qw(qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore)} = split(/\t/, $line);
-	next if($tokenHash{'pident'} < $minimumPercentIdentity);
-	if($tokenHash{'qseqid'} ne $topTokenHash{'qseqid'}) {
-		if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
-			if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) == 1) {
-				$orthologyCountHash{$_} += $weight foreach(@orthologyList);
-				$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
+foreach my $inputFile (@inputFileList) {
+	my %topTokenHash = ();
+	$topTokenHash{'qseqid'} = '';
+	my %orthologyProteinLengthHash = ();
+	open(my $reader, "sort --field-separator='\t' -k1,1 -k11,11g -k12,12gr $inputFile |");
+	while(my $line = <$reader>) {
+		chomp($line);
+		my %tokenHash = ();
+		@tokenHash{qw(qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore)} = split(/\t/, $line);
+		next if($tokenHash{'pident'} < $minimumPercentIdentity);
+		if($tokenHash{'qseqid'} ne $topTokenHash{'qseqid'}) {
+			if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
+				if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) > 0) {
+					$orthologyCountHash{$_} += $weight foreach(@orthologyList);
+					$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
+				}
+				$totalReadCount += $weight;
 			}
-			$totalReadCount += $weight;
+			%topTokenHash = %tokenHash;
+			%orthologyProteinLengthHash = ();
 		}
-		%topTokenHash = %tokenHash;
-		%orthologyProteinLengthHash = ();
+		if(scalar(grep {$tokenHash{$_} != $topTokenHash{$_}} 'evalue', 'bitscore') == 0) {
+			my $orthology = getOrthology(my $protein = $tokenHash{'sseqid'});
+			$orthologyProteinLengthHash{$orthology}->{$protein} = $_ if(defined($_ = $proteinLengthHash{$protein}));
+		}
 	}
-	if(scalar(grep {$tokenHash{$_} != $topTokenHash{$_}} 'evalue', 'bitscore') == 0) {
-		my $orthology = getOrthology(my $protein = $tokenHash{'sseqid'});
-		$orthologyProteinLengthHash{$orthology}->{$protein} = $_ if(defined($_ = $proteinLengthHash{$protein}));
+	close($reader);
+	if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
+		if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) > 0) {
+			$orthologyCountHash{$_} += $weight foreach(@orthologyList);
+			$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
+		}
+		$totalReadCount += $weight;
 	}
-}
-close($reader);
-if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
-	if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) == 1) {
-		$orthologyCountHash{$_} += $weight foreach(@orthologyList);
-		$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
-	}
-	$totalReadCount += $weight;
 }
 
 if($orthologyDefinitionFile ne '') {
