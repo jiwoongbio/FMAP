@@ -13,6 +13,7 @@ my $databasePrefix = "$fmapPath/FMAP_data/$database";
 
 GetOptions('h' => \(my $help = ''),
 	'c' => \(my $cpmInsteadOfRPKM = ''),
+	'm' => \(my $allowMultipleMapping = ''),
 	'i=f' => \(my $minimumPercentIdentity = 80),
 	'l=s' => \(my $proteinLengthFile = "$databasePrefix.length.txt"),
 	'o=s' => \(my $proteinOrthologyFile = ''),
@@ -26,6 +27,7 @@ Usage:   perl FMAP_quantification.pl [options] blast_hits1.txt [blast_hits2.txt 
 
 Options: -h       display this help message
          -c       use CPM values instead of RPKM values
+         -m       allow multiple mapping
          -i FLOAT minimum percent identity [$minimumPercentIdentity]
          -l FILE  tab-delimited text file with the first column having protein names and the second column having the sequence lengths
          -o FILE  tab-delimited text file with the first column having protein names and the second column having the orthology names
@@ -98,7 +100,8 @@ foreach my $inputFile (@inputFileList) {
 		next if($tokenHash{'pident'} < $minimumPercentIdentity);
 		if($tokenHash{'qseqid'} ne $topTokenHash{'qseqid'}) {
 			if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
-				if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) > 0) {
+				my @orthologyList = keys %orthologyProteinLengthHash;
+				if(@orthologyList && (scalar(@orthologyList) == 1 || $allowMultipleMapping)) {
 					$orthologyCountHash{$_} += $weight foreach(@orthologyList);
 					$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
 				}
@@ -114,7 +117,8 @@ foreach my $inputFile (@inputFileList) {
 	}
 	close($reader);
 	if($topTokenHash{'qseqid'} ne '' && defined(my $weight = $readNameWeightFile ne '' ? $readNameWeightHash{$topTokenHash{'qseqid'}} : 1)) {
-		if(scalar(my @orthologyList = keys %orthologyProteinLengthHash) > 0) {
+		my @orthologyList = keys %orthologyProteinLengthHash;
+		if(@orthologyList && (scalar(@orthologyList) == 1 || $allowMultipleMapping)) {
 			$orthologyCountHash{$_} += $weight foreach(@orthologyList);
 			$orthologyRpkHash{$_} += $weight / (min(values %{$orthologyProteinLengthHash{$_}}) * 3 / 1000) foreach(@orthologyList);
 		}
