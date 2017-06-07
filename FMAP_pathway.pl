@@ -51,7 +51,7 @@ while(my $line = <$reader>) {
 	chomp($line);
 	my ($orthology, $pathway) = split(/\t/, $line);
 	my $color = $targetOrthologyColorHash{$orthology};
-	push(@{$pathwayTargetOrthologyListHash{$pathway}}, "$orthology $color") if(defined($color));
+	push(@{$pathwayTargetOrthologyListHash{$pathway}}, "$orthology+$color") if(defined($color));
 	$pathwayOrthologyCountHash{$pathway} += 1;
 	$orthologyHash{$orthology} = 1;
 }
@@ -69,7 +69,7 @@ my %pathwayDefinitionHash = ();
 	close($reader);
 }
 
-print join("\t", 'pathway', 'definition', 'orthology.count', 'coverage', 'pvalue', 'orthology.colors'), "\n";
+print join("\t", 'pathway', 'definition', 'orthology.count', 'coverage', 'pvalue', 'weblink'), "\n";
 my $R = Statistics::R->new();
 foreach my $pathway (sort keys %pathwayTargetOrthologyListHash) {
 	my $pathwayTargetOrthologyCount = scalar(my @pathwayTargetOrthologyList = @{$pathwayTargetOrthologyListHash{$pathway}});
@@ -80,6 +80,7 @@ foreach my $pathway (sort keys %pathwayTargetOrthologyListHash) {
 	my $definition = $pathwayDefinitionHash{$pathway};
 	$definition = '' unless(defined($definition));
 	my $coverage = $pathwayTargetOrthologyCount / $pathwayOrthologyCount;
-	print join("\t", $pathway, $definition, $pathwayTargetOrthologyCount, $coverage, $pvalue, join('|', @pathwayTargetOrthologyList)), "\n";
+	my $weblink = sprintf("http://www.kegg.jp/kegg-bin/show_pathway?map=%s&multi_query=%s", $pathway, join('%0d%0a', @pathwayTargetOrthologyList));
+	print join("\t", $pathway, $definition, $pathwayTargetOrthologyCount, $coverage, $pvalue, $weblink), "\n";
 }
 $R->stop();
