@@ -75,7 +75,7 @@ if(-r "$databasePath.fasta") {
 }
 
 # KEGG
-if($database =~ s/^orthology_uniref//) {
+if($database =~ /^orthology_uniref/) {
 	my $file = 'KEGG_orthology.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -92,7 +92,7 @@ if($database =~ s/^orthology_uniref//) {
 		close($writer);
 	}
 }
-if($database =~ s/^orthology_uniref//) {
+if($database =~ /^orthology_uniref/) {
 	my $file = 'KEGG_orthology2pathway.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -112,7 +112,7 @@ if($database =~ s/^orthology_uniref//) {
 		close($writer);
 	}
 }
-if($database =~ s/^orthology_uniref//) {
+if($database =~ /^orthology_uniref/) {
 	my $file = 'KEGG_pathway.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -131,7 +131,7 @@ if($database =~ s/^orthology_uniref//) {
 		close($writer);
 	}
 }
-if($database =~ s/^orthology_uniref//) {
+if($database =~ /^orthology_uniref/) {
 	my $file = 'KEGG_orthology2module.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -149,7 +149,7 @@ if($database =~ s/^orthology_uniref//) {
 		close($writer);
 	}
 }
-if($database =~ s/^orthology_uniref//) {
+if($database =~ /^orthology_uniref/) {
 	my $file = 'KEGG_module.txt';
 	if($downloadPrebuiltKEGG) {
 		downloadFile($file);
@@ -168,7 +168,7 @@ if($database =~ s/^orthology_uniref//) {
 }
 
 # Operon
-if($database =~ s/^orthology_uniref//) {
+if($database =~ /^orthology_uniref/) {
 	chomp(my $hostname = `hostname`);
 	if($fmapURL !~ /:\/\/$hostname\//) {
 		downloadFile('known_operon.KEGG_orthology.txt', 'known_operon.definition.txt', 'known_operon.KEGG_orthology_definition.txt', 'known_operon.KEGG_pathway.txt');
