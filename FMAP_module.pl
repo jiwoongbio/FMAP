@@ -33,7 +33,7 @@ my %targetOrthologyColorHash = ();
 		chomp($line);
 		my %tokenHash = ();
 		@tokenHash{@columnList} = split(/\t/, $line);
-		if($tokenHash{'filter'} eq 'pass') {
+		if($tokenHash{'filter'} eq 'pass' or not defined($tokenHash{'filter'})) {
 			my ($orthology, $log2foldchange) = @tokenHash{'orthology', 'log2foldchange'};
 			$targetOrthologyColorHash{$orthology} = 'red'  if($log2foldchange > 0);
 			$targetOrthologyColorHash{$orthology} = 'blue' if($log2foldchange < 0);
