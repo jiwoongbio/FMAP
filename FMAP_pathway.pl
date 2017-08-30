@@ -9,7 +9,10 @@ use Statistics::R;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 
-GetOptions('h' => \(my $help = ''));
+GetOptions('h' => \(my $help = ''),
+	'p=s' => \(my $orthology2pathwayFile = "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt"),
+	'd=s' => \(my $orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_pathway.txt"),
+);
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -21,7 +24,7 @@ EOF
 }
 
 my ($inputFile) = @ARGV;
-foreach($inputFile, "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt", "$fmapPath/FMAP_data/KEGG_pathway.txt") {
+foreach($inputFile, $orthology2pathwayFile, $orthologyDefinitionFile) {
 	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my %targetOrthologyColorHash = ();
@@ -33,7 +36,7 @@ my %targetOrthologyColorHash = ();
 		chomp($line);
 		my %tokenHash = ();
 		@tokenHash{@columnList} = split(/\t/, $line);
-		if($tokenHash{'filter'} eq 'pass' or not defined($tokenHash{'filter'})) {
+		if(not defined($tokenHash{'filter'}) or $tokenHash{'filter'} eq 'pass') {
 			my ($orthology, $log2foldchange) = @tokenHash{'orthology', 'log2foldchange'};
 			$targetOrthologyColorHash{$orthology} = 'red'  if($log2foldchange > 0);
 			$targetOrthologyColorHash{$orthology} = 'blue' if($log2foldchange < 0);
@@ -46,7 +49,7 @@ my $targetOrthologyCount = scalar(keys %targetOrthologyColorHash);
 my %pathwayTargetOrthologyListHash = ();
 my %pathwayOrthologyCountHash = ();
 my %orthologyHash = ();
-open(my $reader, "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt");
+open(my $reader, $orthology2pathwayFile);
 while(my $line = <$reader>) {
 	chomp($line);
 	my ($orthology, $pathway) = split(/\t/, $line);
@@ -60,7 +63,7 @@ my $orthologyCount = scalar(keys %orthologyHash);
 
 my %pathwayDefinitionHash = ();
 {
-	open(my $reader, "$fmapPath/FMAP_data/KEGG_pathway.txt");
+	open(my $reader, $orthologyDefinitionFile);
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($pathway, $definition) = split(/\t/, $line);
