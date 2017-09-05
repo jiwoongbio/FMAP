@@ -18,6 +18,10 @@ Options: -h       display this help message
 
 EOF
 }
+foreach('centrifuge') {
+	die "ERROR in $0: '$_' is not executable.\n" unless(-x getCommandPath($_));
+}
+
 my ($regionFile, $assemblyFastaFile, $centrifugeIndex) = @ARGV;
 my %assemblySequenceHash = ();
 {
@@ -79,4 +83,12 @@ my %regionTaxonReferenceHash = ();
 		print join("\t", @tokenHash{@columnList, 'taxon', 'reference'}), "\n";
 	}
 	close($reader);
+}
+
+sub getCommandPath {
+	my ($command) = @_;
+	chomp($command = `which $command`) if($command ne '' && $command !~ /\//);
+	$command =~ s/^~\//$ENV{'HOME'}\//;
+	$command = abs_path($command) if($command ne '');
+	return $command;
 }

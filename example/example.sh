@@ -54,11 +54,16 @@ case4=case4.abundance.txt \
 # FMAP_comparison.pl: compare sample groups and identify differentially-abundant genes
 perl $FMAP_DIR/FMAP_comparison.pl example.table.txt 'control1,control2,control3,control4,control5' 'case1,case2,case3,case4' > example.comparison.txt
 
-# FMAP_operon.pl: mapping differentially-abundant genes to operons
-perl $FMAP_DIR/FMAP_operon.pl example.comparison.txt > example.operon.txt
-
 # FMAP_pathway.pl: mapping differentially-abundant genes to KEGG pathways
 perl $FMAP_DIR/FMAP_pathway.pl example.comparison.txt > example.pathway.txt
 
 # FMAP_module.pl: mapping differentially-abundant genes to KEGG modules
 perl $FMAP_DIR/FMAP_module.pl example.comparison.txt > example.module.txt
+
+# FMAP_operon.pl: mapping differentially-abundant genes to operons
+perl $FMAP_DIR/FMAP_operon.pl example.comparison.txt > example.operon.txt
+
+# FMAP_plot.pl: plot pathway|module|operon enrichments
+perl $FMAP_DIR/FMAP_plot.pl example.pathway.txt example.pathway.plot.pdf
+perl $FMAP_DIR/FMAP_plot.pl example.module.txt example.module.plot.pdf
+perl $FMAP_DIR/FMAP_plot.pl example.operon.txt example.operon.plot.pdf
