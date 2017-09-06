@@ -2,6 +2,15 @@
 FMAP_DIR=..
 MAPPING_THREADS=4
 
+if ! [ -x "$(command -v spades.py)" ]; then
+	echo "'spades.py' is not executable."
+	exit
+fi
+if ! [ -x "$(command -v centrifuge)" ]; then
+	echo "'centrifuge' is not executable."
+	exit
+fi
+
 # Download example sequencing data
 wget --no-verbose -O P6.1.fastq.gz http://qbrc.swmed.edu/FMAP/example/P6.1.fastq.gz
 wget --no-verbose -O P6.2.fastq.gz http://qbrc.swmed.edu/FMAP/example/P6.2.fastq.gz
