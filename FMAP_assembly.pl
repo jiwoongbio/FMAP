@@ -153,9 +153,10 @@ if(@inputFileList) { # Read mapping
 			my $samtoolsVersion = getSamtoolsVersion();
 			if($samtoolsVersion =~ /^0\./) {
 				system("samtools sort $outputPrefix.bam $outputPrefix.sorted");
-			}
-			if($samtoolsVersion =~ /^1\./) {
+			} elsif($samtoolsVersion =~ /^1\./) {
 				system("samtools sort -o $outputPrefix.sorted.bam $outputPrefix.bam");
+			} else {
+				die "ERROR in $0: 'samtools' version is undetectable.\n";
 			}
 		}
 		system("samtools index $outputPrefix.sorted.bam") if(-r "$outputPrefix.sorted.bam");
