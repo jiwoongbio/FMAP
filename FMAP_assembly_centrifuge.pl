@@ -3,6 +3,7 @@ use strict;
 use warnings;
 local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
+use Cwd 'abs_path';
 use Getopt::Long qw(:config no_ignore_case);
 
 GetOptions('h' => \(my $help = ''),
