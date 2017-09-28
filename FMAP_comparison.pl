@@ -49,8 +49,8 @@ my %orthologyDefinitionHash = ();
 		@tokenHash{@columnList} = split(/\t/, $line);
 		push(@orthologyList, my $orthology = $tokenHash{'orthology'});
 		$orthologyDefinitionHash{$orthology} = $_ if(defined($_ = $tokenHash{'definition'}));
-		my $values = join(',', map {@tokenHash{@$_}} @sampleListList);
-		$R->run("table <- rbind(table, $orthology = c($values))");
+		my $abundances = join(',', map {@tokenHash{@$_}} @sampleListList);
+		$R->run("table <- rbind(table, $orthology = matrix(c($abundances), nrow = 1))");
 	}
 	close($reader);
 }

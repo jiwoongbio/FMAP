@@ -110,7 +110,7 @@ my $R = Statistics::R->new();
 $R->run('table <- data.frame()');
 foreach my $orthology (keys %orthologySampleAbundanceHash) {
 	my $abundances = join(',', map {defined($_) ? $_ : 0} map {$orthologySampleAbundanceHash{$orthology}->{$_}} @sampleList);
-	$R->run("table <- rbind(table, $orthology = c($abundances))");
+	$R->run("table <- rbind(table, $orthology = matrix(c($abundances), nrow = 1))");
 }
 $R->run('hc <- hclust(dist(table))');
 my $orthologyList = $R->get('hc$labels[hc$order]');
@@ -179,9 +179,9 @@ foreach my $orthology (@$orthologyList) {
 		} else {
 			$color = color($abundance, 1, 0);
 		}
-		if(defined($_ = $orthologySampleTaxonAbundanceHash{$orthology}->{$sample})) {
+		if($abundance > 0 && defined($_ = $orthologySampleTaxonAbundanceHash{$orthology}->{$sample})) {
 			my %taxonAbundanceHash = %$_;
-			my @taxonAbundanceList = sort {$b->[1] <=> $a->[1]} map {[$_ =~ /^[0-9]+$/ ? $db->get_taxon(-taxonid => $_)->scientific_name : $_, $taxonAbundanceHash{$_}]} keys %taxonAbundanceHash;
+			my @taxonAbundanceList = sort {$b->[1] <=> $a->[1]} map {[$_->[1], $_->[0]]} map {[$taxonAbundanceHash{$_}, getTaxonName($_)]} keys %taxonAbundanceHash;
 			my $taxonAbundances = join('<br>', map {sprintf('%s %.3f', @$_)} @taxonAbundanceList);
 			my @taxonFontSizeList = map {[substr($_->[0], 0, 4), $fontSize * ($_->[1] / $abundance)]} @taxonAbundanceList;
 			my $taxons = join('', map {sprintf('<div style="font-size: %fpx; line-height: %fpx;">%s</div>', $_->[1], $_->[1], $_->[0])} @taxonFontSizeList);
@@ -223,4 +223,14 @@ sub color {
 	my ($red, $green, $blue) = @_;
 	(my $color = sprintf('#%02x%02x%02x', int($red * 255), int($green * 255), int($blue * 255))) =~ tr/a-z/A-Z/;
 	return $color;
+}
+
+sub getTaxonName {
+	my ($taxonId) = @_;
+	if($taxonId =~ /^[0-9]+$/) {
+		if(defined($_ = $db->get_taxon(-taxonid => $taxonId))) {
+			return $_->scientific_name;
+		}
+	}
+	return 'Unknown';
 }
