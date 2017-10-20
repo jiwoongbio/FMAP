@@ -43,6 +43,15 @@ my %orthologyDefinitionHash = ();
 	open(my $reader, $tableFile);
 	chomp(my $line = <$reader>);
 	my @columnList = split(/\t/, $line);
+	{
+		my %columnHash = ();
+		$columnHash{$_} = 1 foreach(@columnList);
+		my %sampleHash = ();
+		$sampleHash{$_} = 1 foreach(map {@$_} @sampleListList);
+		foreach my $sample (sort keys %sampleHash) {
+			die "ERROR in $0: The sample \"$sample\" is not on the table.\n" unless($columnHash{$sample});
+		}
+	}
 	while(my $line = <$reader>) {
 		chomp($line);
 		my %tokenHash = ();
