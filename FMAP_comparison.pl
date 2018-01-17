@@ -30,6 +30,7 @@ die "ERROR in $0: The test is not provided.\n" if(scalar(grep {$test eq $_} @ava
 
 my ($tableFile, @samplesList) = @ARGV;
 my @sampleListList = map {[split(/,/, $_)]} @samplesList;
+my @sampleList = map {@$_} @sampleListList;
 die "ERROR in $0: The input \"$tableFile\" is not available.\n" unless(-r $tableFile);
 die "ERROR in $0: Not enough sample groups.\n" unless(scalar(@sampleListList) > 1);
 die "ERROR in $0: The comparison requires at least 3 samples per group.\n" unless(scalar(grep {scalar(@$_) < 3} @sampleListList) == 0);
@@ -47,7 +48,7 @@ my %orthologyDefinitionHash = ();
 		my %columnHash = ();
 		$columnHash{$_} = 1 foreach(@columnList);
 		my %sampleHash = ();
-		$sampleHash{$_} = 1 foreach(map {@$_} @sampleListList);
+		$sampleHash{$_} = 1 foreach(@sampleList);
 		foreach my $sample (sort keys %sampleHash) {
 			die "ERROR in $0: The sample \"$sample\" is not on the table.\n" unless($columnHash{$sample});
 		}
@@ -55,11 +56,16 @@ my %orthologyDefinitionHash = ();
 	while(my $line = <$reader>) {
 		chomp($line);
 		my %tokenHash = ();
-		@tokenHash{@columnList} = split(/\t/, $line);
+		@tokenHash{@columnList} = split(/\t/, $line, -1);
 		push(@orthologyList, my $orthology = $tokenHash{'orthology'});
 		$orthologyDefinitionHash{$orthology} = $_ if(defined($_ = $tokenHash{'definition'}));
-		my $abundances = join(',', map {@tokenHash{@$_}} @sampleListList);
-		$R->run("table <- rbind(table, $orthology = matrix(c($abundances), nrow = 1))");
+		my @abundanceList = @tokenHash{@sampleList};
+		$R->run('abundances <- c()');
+		while(@abundanceList) {
+			my $abundances = join(',', splice(@abundanceList, 0, 100));
+			$R->run("abundances <- c(abundances, $abundances)");
+		}
+		$R->run("table <- rbind(table, $orthology = matrix(abundances, nrow = 1))");
 	}
 	close($reader);
 }

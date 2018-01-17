@@ -98,7 +98,7 @@ foreach my $sampleFile (@sampleFileList) {
 		@tokenHash{@columnList} = split(/\t/, $line);
 		my $orthology = $tokenHash{'orthology'};
 		my $abundance = $tokenHash{'meanDepth/genome'};
-		next if(defined($_ = $orthologyFilterHash{$orthology}) && $_ eq 'fail');
+		next if($comparisonFile ne '' && !(defined($_ = $orthologyFilterHash{$orthology}) && $_ eq 'pass'));
 		$orthologySampleAbundanceHash{$orthology}->{$sample} += $abundance;
 		$orthologySampleTaxonAbundanceHash{$orthology}->{$sample}->{$_} += $abundance if(defined($_ = $tokenHash{'taxon'}));
 		$orthologyDefinitionHash{$orthology} = $_ if(defined($_ = $tokenHash{'definition'}));
@@ -183,7 +183,7 @@ foreach my $orthology (@$orthologyList) {
 			my %taxonAbundanceHash = %$_;
 			my @taxonAbundanceList = sort {$b->[1] <=> $a->[1]} map {[$_->[1], $_->[0]]} map {[$taxonAbundanceHash{$_}, getTaxonName($_)]} keys %taxonAbundanceHash;
 			my $taxonAbundances = join('<br>', map {sprintf('%s %.3f', @$_)} @taxonAbundanceList);
-			my @taxonFontSizeList = map {[substr($_->[0], 0, 4), $fontSize * ($_->[1] / $abundance)]} @taxonAbundanceList;
+			my @taxonFontSizeList = map {[getTaxonNameLetters($_->[0]), $fontSize * ($_->[1] / $abundance)]} @taxonAbundanceList;
 			my $taxons = join('', map {sprintf('<div style="font-size: %fpx; line-height: %fpx;">%s</div>', $_->[1], $_->[1], $_->[0])} @taxonFontSizeList);
 			push(@tdList, "<td style=\"text-align: center; background-color: $color;\">$taxons<div class=\"popup\">$taxonAbundances</div></td>");
 		} else {
@@ -233,4 +233,13 @@ sub getTaxonName {
 		}
 	}
 	return 'Unknown';
+}
+
+sub getTaxonNameLetters {
+	my ($taxonName) = @_;
+	if($taxonName =~ /([A-Za-z]{4})/) {
+		return $1;
+	} else {
+		return '';
+	}
 }
