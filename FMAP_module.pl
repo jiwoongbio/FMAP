@@ -9,7 +9,10 @@ use Statistics::R;
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 
-GetOptions('h' => \(my $help = ''));
+GetOptions('h' => \(my $help = ''),
+	'p=s' => \(my $orthology2moduleFile = "$fmapPath/FMAP_data/KEGG_orthology2module.txt"),
+	'd=s' => \(my $moduleDefinitionFile = "$fmapPath/FMAP_data/KEGG_module.txt"),
+);
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
 
@@ -21,7 +24,7 @@ EOF
 }
 
 my ($inputFile) = @ARGV;
-foreach($inputFile, "$fmapPath/FMAP_data/KEGG_orthology2module.txt", "$fmapPath/FMAP_data/KEGG_module.txt") {
+foreach($inputFile, $orthology2moduleFile, $moduleDefinitionFile) {
 	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my %targetOrthologyColorHash = ();
@@ -46,12 +49,12 @@ my $targetOrthologyCount = scalar(keys %targetOrthologyColorHash);
 my %moduleTargetOrthologyListHash = ();
 my %moduleOrthologyCountHash = ();
 my %orthologyHash = ();
-open(my $reader, "$fmapPath/FMAP_data/KEGG_orthology2module.txt");
+open(my $reader, $orthology2moduleFile);
 while(my $line = <$reader>) {
 	chomp($line);
 	my ($orthology, $module) = split(/\t/, $line);
 	my $color = $targetOrthologyColorHash{$orthology};
-	push(@{$moduleTargetOrthologyListHash{$module}}, "$orthology $color") if(defined($color));
+	push(@{$moduleTargetOrthologyListHash{$module}}, "$orthology+$color") if(defined($color));
 	$moduleOrthologyCountHash{$module} += 1;
 	$orthologyHash{$orthology} = 1;
 }
@@ -60,7 +63,7 @@ my $orthologyCount = scalar(keys %orthologyHash);
 
 my %moduleDefinitionHash = ();
 {
-	open(my $reader, "$fmapPath/FMAP_data/KEGG_module.txt");
+	open(my $reader, $moduleDefinitionFile);
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($module, $definition) = split(/\t/, $line);
@@ -69,7 +72,7 @@ my %moduleDefinitionHash = ();
 	close($reader);
 }
 
-print join("\t", 'module', 'definition', 'orthology.count', 'coverage', 'pvalue', 'orthology.colors'), "\n";
+print join("\t", 'module', 'definition', 'orthology.count', 'coverage', 'pvalue', 'weblink'), "\n";
 my $R = Statistics::R->new();
 foreach my $module (sort keys %moduleTargetOrthologyListHash) {
 	my $moduleTargetOrthologyCount = scalar(my @moduleTargetOrthologyList = @{$moduleTargetOrthologyListHash{$module}});
@@ -80,6 +83,13 @@ foreach my $module (sort keys %moduleTargetOrthologyListHash) {
 	my $definition = $moduleDefinitionHash{$module};
 	$definition = '' unless(defined($definition));
 	my $coverage = $moduleTargetOrthologyCount / $moduleOrthologyCount;
-	print join("\t", $module, $definition, $moduleTargetOrthologyCount, $coverage, $pvalue, join('|', @moduleTargetOrthologyList)), "\n";
+	my $weblink = sprintf("http://www.kegg.jp/kegg-bin/show_pathway?map=%s&multi_query=%s", $module, join('%0d%0a', @moduleTargetOrthologyList));
+	my %countHash = ();
+	foreach my $orthology (@moduleTargetOrthologyList) {
+		$countHash{'up'} += 1 if($orthology =~ /\+red$/);
+		$countHash{'down'} += 1 if($orthology =~ /\+blue$/);
+	}
+	$moduleTargetOrthologyCount = sprintf('%d (%s)', $moduleTargetOrthologyCount, $_) if($_ = join(', ', map {defined($_->[1]) ? join(':', @$_) : ()} map {[$_, $countHash{$_}]} ('up', 'down')));
+	print join("\t", $module, $definition, $moduleTargetOrthologyCount, $coverage, $pvalue, $weblink), "\n";
 }
 $R->stop();

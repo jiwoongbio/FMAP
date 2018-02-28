@@ -11,7 +11,7 @@ use Statistics::R;
 
 GetOptions('h' => \(my $help = ''),
 	'p=s' => \(my $orthology2pathwayFile = "$fmapPath/FMAP_data/KEGG_orthology2pathway.txt"),
-	'd=s' => \(my $orthologyDefinitionFile = "$fmapPath/FMAP_data/KEGG_pathway.txt"),
+	'd=s' => \(my $pathwayDefinitionFile = "$fmapPath/FMAP_data/KEGG_pathway.txt"),
 );
 if($help || scalar(@ARGV) == 0) {
 	die <<EOF;
@@ -24,7 +24,7 @@ EOF
 }
 
 my ($inputFile) = @ARGV;
-foreach($inputFile, $orthology2pathwayFile, $orthologyDefinitionFile) {
+foreach($inputFile, $orthology2pathwayFile, $pathwayDefinitionFile) {
 	die "ERROR in $0: '$_' is not readable.\n" unless(-r $_);
 }
 my %targetOrthologyColorHash = ();
@@ -63,7 +63,7 @@ my $orthologyCount = scalar(keys %orthologyHash);
 
 my %pathwayDefinitionHash = ();
 {
-	open(my $reader, $orthologyDefinitionFile);
+	open(my $reader, $pathwayDefinitionFile);
 	while(my $line = <$reader>) {
 		chomp($line);
 		my ($pathway, $definition) = split(/\t/, $line);
@@ -84,6 +84,12 @@ foreach my $pathway (sort keys %pathwayTargetOrthologyListHash) {
 	$definition = '' unless(defined($definition));
 	my $coverage = $pathwayTargetOrthologyCount / $pathwayOrthologyCount;
 	my $weblink = sprintf("http://www.kegg.jp/kegg-bin/show_pathway?map=%s&multi_query=%s", $pathway, join('%0d%0a', @pathwayTargetOrthologyList));
+	my %countHash = ();
+	foreach my $orthology (@pathwayTargetOrthologyList) {
+		$countHash{'up'} += 1 if($orthology =~ /\+red$/);
+		$countHash{'down'} += 1 if($orthology =~ /\+blue$/);
+	}
+	$pathwayTargetOrthologyCount = sprintf('%d (%s)', $pathwayTargetOrthologyCount, $_) if($_ = join(', ', map {defined($_->[1]) ? join(':', @$_) : ()} map {[$_, $countHash{$_}]} ('up', 'down')));
 	print join("\t", $pathway, $definition, $pathwayTargetOrthologyCount, $coverage, $pvalue, $weblink), "\n";
 }
 $R->stop();
