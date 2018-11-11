@@ -31,7 +31,7 @@ die "ERROR in $0: The test is not provided.\n" if(scalar(grep {$test eq $_} @ava
 my ($tableFile, @samplesList) = @ARGV;
 my @sampleListList = map {[split(/,/, $_)]} @samplesList;
 my @sampleList = map {@$_} @sampleListList;
-die "ERROR in $0: The input \"$tableFile\" is not available.\n" unless(-r $tableFile);
+die "ERROR in $0: The input \"$tableFile\" is not available.\n" unless(-r $tableFile || $tableFile eq '-');
 die "ERROR in $0: Not enough sample groups.\n" unless(scalar(@sampleListList) > 1);
 die "ERROR in $0: The comparison requires at least 3 samples per group.\n" unless(scalar(grep {scalar(@$_) < 3} @sampleListList) == 0);
 
@@ -65,9 +65,12 @@ my %orthologyDefinitionHash = ();
 			my $abundances = join(',', splice(@abundanceList, 0, 100));
 			$R->run("abundances <- c(abundances, $abundances)");
 		}
-		$R->run("table <- rbind(table, $orthology = matrix(abundances, nrow = 1))");
+		$R->run("table <- rbind(table, matrix(abundances, nrow = 1))");
 	}
 	close($reader);
+	foreach my $index (0 .. $#orthologyList) {
+		$R->set(sprintf('rownames(table)[%d]', $index + 1), $orthologyList[$index]);
+	}
 }
 
 $R->set('condition', [map {($_) x scalar(@{$sampleListList[$_]})} (0 .. $#sampleListList)]);

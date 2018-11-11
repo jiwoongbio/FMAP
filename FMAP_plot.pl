@@ -66,7 +66,7 @@ my %updownRatioHash = ();
 		}
 		if($tokenHash{'pvalue'} <= $pvalueCutoff && $tokenHash{'coverage'} >= $coverageCutoff) {
 			$pvalueHash{$name} = $tokenHash{'pvalue'};
-			if($tokenHash{'orthology.count'} =~ /^([0-9]+) \((.*)\)$/) {
+			if(defined($tokenHash{'orthology.count'}) && $tokenHash{'orthology.count'} =~ /^([0-9]+) \((.*)\)$/) {
 				$updownRatioHash{$name}->{$_->[0]} = $_->[1] / $1 foreach(grep {$_->[0] eq 'up' || $_->[0] eq 'down'} map {[split(/:/, $_, 2)]} split(/, /, $2));
 			}
 		}
