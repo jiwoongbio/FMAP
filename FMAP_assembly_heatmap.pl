@@ -106,15 +106,24 @@ foreach my $sampleFile (@sampleFileList) {
 	close($reader);
 }
 
-my $R = Statistics::R->new();
-$R->run('table <- data.frame()');
-foreach my $orthology (keys %orthologySampleAbundanceHash) {
-	my $abundances = join(',', map {defined($_) ? $_ : 0} map {$orthologySampleAbundanceHash{$orthology}->{$_}} @sampleList);
-	$R->run("table <- rbind(table, $orthology = matrix(c($abundances), nrow = 1))");
+my @orthologyList = sort keys %orthologySampleAbundanceHash;
+{
+	my $R = Statistics::R->new();
+	$R->run('table <- data.frame()');
+	foreach my $orthology (@orthologyList) {
+		my @abundanceList = map {defined($_) ? $_ : 0} map {$orthologySampleAbundanceHash{$orthology}->{$_}} @sampleList;
+		$R->run('abundances <- c()');
+		while(@abundanceList) {
+			my $abundances = join(',', splice(@abundanceList, 0, 100));
+			$R->run("abundances <- c(abundances, $abundances)");
+		}
+		$R->run("table <- rbind(table, matrix(abundances, nrow = 1))");
+		$R->set('rownames(table)[nrow(table)]', $orthology);
+	}
+	$R->run('hc <- hclust(dist(table))');
+	@orthologyList = @{$R->get('hc$labels[hc$order]')};
+	$R->stop();
 }
-$R->run('hc <- hclust(dist(table))');
-my $orthologyList = $R->get('hc$labels[hc$order]');
-$R->stop();
 
 #print <<EOF;
 #Content-Type: text/html; charset=utf-8
@@ -163,7 +172,7 @@ print "<p><table class=\"heatmap\">\n";
 	}
 	print join('', "<tr>", @tdList, "</tr>"), "\n";
 }
-foreach my $orthology (@$orthologyList) {
+foreach my $orthology (@orthologyList) {
 	my @tdList = ();
 	if(defined($_ = $orthologyDefinitionHash{$orthology}) && $_ ne '') {
 		(my $description = $_) =~ s/;/<br>/g;

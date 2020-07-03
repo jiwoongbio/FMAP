@@ -119,7 +119,7 @@ unless($downloadOnlyKEGG) {
 }
 
 sub downloadFile {
-	system("wget --no-verbose -O $fmapPath/FMAP_data/$_ $fmapURL/FMAP_data/$_") foreach(@_);
+	system("wget --no-verbose --no-check-certificate -O $fmapPath/FMAP_data/$_ $fmapURL/FMAP_data/$_") foreach(@_);
 }
 
 sub loadDefaultDatabase {
