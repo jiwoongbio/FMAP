@@ -4,7 +4,7 @@ use warnings;
 local $SIG{__WARN__} = sub { die "ERROR in $0: ", $_[0] };
 
 use Cwd 'abs_path';
-use Getopt::Long;
+use Getopt::Long qw(:config no_ignore_case);
 
 (my $fmapPath = abs_path($0)) =~ s/\/[^\/]*$//;
 my $database = loadDefaultDatabase();
@@ -16,6 +16,7 @@ GetOptions('h' => \(my $help = ''),
 	'e=f' => \(my $evalue = 10),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
 	'a=f' => \(my $acceleration = 0.5),
+	'l' => \(my $longread = ''),
 	'multiple' => \(my $multiple = ''),
 	'd=s' => \$databasePrefix);
 if($help || scalar(@ARGV) == 0) {
@@ -29,6 +30,7 @@ Options: -h       display this help message
          -e FLOAT maximum e-value to report alignments [$evalue]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
          -a FLOAT search acceleration for ublast [$acceleration]
+         -l       long read input for diamond
 
 EOF
 }
@@ -51,7 +53,9 @@ my (@inputFileList) = @ARGV;
 foreach my $inputFile (@inputFileList) {
 	print STDERR "ERROR in $0: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
 	if($mapper =~ /^diamond/) {
-		if($multiple) {
+		if($longread) {
+			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --long-reads 1>&2");
+		} elsif($multiple) {
 			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --max-target-seqs 0 1>&2");
 		} else {
 			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --max-target-seqs 1 1>&2");
