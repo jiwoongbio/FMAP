@@ -16,7 +16,7 @@ GetOptions('h' => \(my $help = ''),
 	'e=f' => \(my $evalue = 10),
 	't=s' => \(my $temporaryDirectory = defined($ENV{'TMPDIR'}) ? $ENV{'TMPDIR'} : '/tmp'),
 	'a=f' => \(my $acceleration = 0.5),
-	'l' => \(my $longread = ''),
+	'F=i' => \(my $frameshift = ''),
 	'multiple' => \(my $multiple = ''),
 	'd=s' => \$databasePrefix);
 if($help || scalar(@ARGV) == 0) {
@@ -30,7 +30,7 @@ Options: -h       display this help message
          -e FLOAT maximum e-value to report alignments [$evalue]
          -t DIR   directory for temporary files [\$TMPDIR or /tmp]
          -a FLOAT search acceleration for ublast [$acceleration]
-         -l       long read input for diamond
+         -F INT   frameshift option for diamond
 
 EOF
 }
@@ -53,12 +53,12 @@ my (@inputFileList) = @ARGV;
 foreach my $inputFile (@inputFileList) {
 	print STDERR "ERROR in $0: The input \"$inputFile\" is not available.\n" unless(-r $inputFile);
 	if($mapper =~ /^diamond/) {
-		if($longread) {
-			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --long-reads 1>&2");
+		if($frameshift) {
+			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --quiet --frameshift $frameshift 1>&2");
 		} elsif($multiple) {
-			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --max-target-seqs 0 1>&2");
+			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --quiet --max-target-seqs 0 1>&2");
 		} else {
-			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --max-target-seqs 1 1>&2");
+			system("$mapperPath blastx --query $inputFile --db $databaseFile --out $temporaryOutputPrefix.blast.txt --outfmt 6 --evalue $evalue --threads $threads --tmpdir $temporaryDirectory --quiet --max-target-seqs 1 1>&2");
 		}
 	}
 	if($mapper =~ /^usearch/) {

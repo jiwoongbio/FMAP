@@ -74,18 +74,18 @@ if(@taxonIdList) {
 	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
 	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
 }
-my %uniprotOrthologyListHash = ();
-{
-	open(my $reader, "$dataPath/KEGG_orthology2uniprot.txt");
-	while(my $line = <$reader>) {
-		chomp($line);
-		my ($orthology, $uniprot) = split(/\t/, $line);
-		$orthology =~ s/^ko://;
-		$uniprot =~ s/^up://;
-		push(@{$uniprotOrthologyListHash{$uniprot}}, $orthology);
-	}
-	close($reader);
-}
+#my %uniprotOrthologyListHash = ();
+#{
+#	open(my $reader, "$dataPath/KEGG_orthology2uniprot.txt");
+#	while(my $line = <$reader>) {
+#		chomp($line);
+#		my ($orthology, $uniprot) = split(/\t/, $line);
+#		$orthology =~ s/^ko://;
+#		$uniprot =~ s/^up://;
+#		push(@{$uniprotOrthologyListHash{$uniprot}}, $orthology);
+#	}
+#	close($reader);
+#}
 my %unirefOrthologyCountHash = ();
 {
 	my $URL = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/idmapping.dat.gz";
@@ -114,11 +114,11 @@ my %unirefOrthologyCountHash = ();
 			if(defined($unirefList) && defined($geneList)) {
 				print $writer join("\t", $_->[1], $_->[0], join(',', @$unirefList)), "\n" foreach(map {[$_, split(/:/, $_)]} @$geneList);
 			}
-			if(defined($unirefList) && defined(my $orthologyList = $uniprotOrthologyListHash{$tokenHash{'UniProtKB-AC'}})) {
-				if(scalar(@$unirefList) == 1 && scalar(@$orthologyList) == 1) {
-					$unirefOrthologyCountHash{$unirefList->[0]}->{$orthologyList->[0]} += 1;
-				}
-			}
+#			if(defined($unirefList) && defined(my $orthologyList = $uniprotOrthologyListHash{$tokenHash{'UniProtKB-AC'}})) {
+#				if(scalar(@$unirefList) == 1 && scalar(@$orthologyList) == 1) {
+#					$unirefOrthologyCountHash{$unirefList->[0]}->{$orthologyList->[0]} += 1;
+#				}
+#			}
 		}
 	}
 }
