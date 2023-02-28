@@ -68,12 +68,12 @@ if(@taxonIdList) {
 		setTaxonIdHash($_) foreach(@taxonList);
 	}
 }
-{
-	my $URL = "http://rest.genome.jp/link/uniprot/ko";
-	my $file = "$dataPath/KEGG_orthology2uniprot.txt";
-	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
-	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
-}
+#{
+#	my $URL = "http://rest.genome.jp/link/uniprot/ko";
+#	my $file = "$dataPath/KEGG_orthology2uniprot.txt";
+#	system("wget --no-verbose -O $file $URL") if(not -r $file or $redownload);
+#	die "ERROR in $0: '$file' has zero size.\n" if(-z $file);
+#}
 #my %uniprotOrthologyListHash = ();
 #{
 #	open(my $reader, "$dataPath/KEGG_orthology2uniprot.txt");
